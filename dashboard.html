@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Motel Reviews Agency — Operator Dashboard</title>
+<link rel="preconnect" href="https://rsms.me/" />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://sdk.twilio.com/js/voice/releases/2.11.3/twilio.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+        colors: {
+          accent: {
+            50:'#ecfdf5', 100:'#d1fae5', 200:'#a7f3d0', 300:'#6ee7b7',
+            400:'#34d399', 500:'#10b981', 600:'#059669', 700:'#047857',
+            800:'#065f46', 900:'#064e3b'
+          }
+        },
+        boxShadow: {
+          'soft':'0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
+          'card':'0 0 0 1px rgb(0 0 0 / 0.04)'
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .card { background: white; border: 1px solid rgb(229 231 235); border-radius: 16px; padding: 24px; }
+  .dark .card { background: rgb(17 24 39); border-color: rgb(31 41 55); }
+  .card-tight { padding: 16px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; transition: all .15s; cursor: pointer; border: none; }
+  .btn-primary { background: rgb(17 24 39); color: white; }
+  .btn-primary:hover { background: rgb(31 41 55); }
+  .dark .btn-primary { background: white; color: rgb(17 24 39); }
+  .dark .btn-primary:hover { background: rgb(229 231 235); }
+  .btn-secondary { background: rgb(243 244 246); color: rgb(17 24 39); }
+  .btn-secondary:hover { background: rgb(229 231 235); }
+  .dark .btn-secondary { background: rgb(31 41 55); color: rgb(229 231 235); }
+  .dark .btn-secondary:hover { background: rgb(55 65 81); }
+  .btn-accent { background: rgb(5 150 105); color: white; }
+  .btn-accent:hover { background: rgb(4 120 87); }
+  .btn-danger { background: rgb(254 226 226); color: rgb(153 27 27); }
+  .dark .btn-danger { background: rgb(127 29 29 / 0.3); color: rgb(252 165 165); }
+  .input { background: white; border: 1px solid rgb(209 213 219); border-radius: 8px; padding: 8px 12px; font-size: 13px; width: 100%; transition: all .15s; }
+  .input:focus { outline: none; border-color: rgb(5 150 105); box-shadow: 0 0 0 3px rgb(16 185 129 / 0.15); }
+  .dark .input { background: rgb(17 24 39); border-color: rgb(55 65 81); color: rgb(243 244 246); }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: rgb(75 85 99); cursor: pointer; transition: all .15s; }
+  .nav-item:hover { background: rgb(243 244 246); color: rgb(17 24 39); }
+  .nav-item.active { background: rgb(236 253 245); color: rgb(4 120 87); }
+  .dark .nav-item { color: rgb(156 163 175); }
+  .dark .nav-item:hover { background: rgb(31 41 55); color: rgb(243 244 246); }
+  .dark .nav-item.active { background: rgb(6 78 59 / 0.4); color: rgb(110 231 183); }
+  .label { display: block; font-size: 12px; font-weight: 500; color: rgb(75 85 99); margin-bottom: 6px; }
+  .dark .label { color: rgb(156 163 175); }
+  .stat-num { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+  .muted { color: rgb(107 114 128); font-size: 12px; }
+  .dark .muted { color: rgb(156 163 175); }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  .scroll-hide::-webkit-scrollbar { display: none }
+  .scroll-hide { scrollbar-width: none }
+  .pulse-dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+  table { width: 100%; font-size: 13px; }
+  th { text-align: left; font-weight: 500; padding: 12px 16px; color: rgb(107 114 128); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgb(229 231 235); }
+  td { padding: 12px 16px; border-bottom: 1px solid rgb(243 244 246); }
+  .dark th { color: rgb(156 163 175); border-color: rgb(31 41 55); }
+  .dark td { border-color: rgb(31 41 55); }
+  tbody tr:hover { background: rgb(249 250 251); }
+  .dark tbody tr:hover { background: rgb(31 41 55 / 0.5); }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+</style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+
+<!-- ========================== LOGIN SCREEN ========================== -->
+<div id="screen-login" class="min-h-screen flex items-center justify-center p-4">
+  <div class="card max-w-md w-full">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-accent-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-soft">
+        <i data-lucide="building-2" class="w-7 h-7 text-white"></i>
+      </div>
+      <h1 class="text-xl font-semibold tracking-tight">Operator login</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" id="loginSubtitle">Sign in to access the dashboard</p>
+    </div>
+    <form id="loginForm" onsubmit="return doLogin(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="label" for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" required autocomplete="email" class="input" placeholder="you@example.com" />
+        </div>
+        <div>
+          <label class="label" for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" required autocomplete="current-password" class="input" placeholder="••••••••" />
+        </div>
+        <div id="loginError" class="hidden text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-2 rounded-lg"></div>
+        <button type="submit" class="btn btn-accent w-full justify-center" style="padding:10px 16px;font-size:14px;">Sign in</button>
+      </div>
+    </form>
+    <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-6">Single-device app — your data stays on this browser.</p>
+  </div>
+</div>
+
+<!-- ========================== SETUP SCREEN ========================== -->
+<div id="screen-setup" class="hidden min-h-screen flex items-center justify-center p-4">
+  <div class="card max-w-md w-full">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-accent-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-soft">
+        <i data-lucide="rocket" class="w-7 h-7 text-white"></i>
+      </div>
+      <h1 class="text-xl font-semibold tracking-tight">Set up your account</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">First-time setup — takes 30 seconds</p>
+    </div>
+    <form id="setupForm" onsubmit="return doSetup(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="label" for="setupAgency">Agency name</label>
+          <input id="setupAgency" required class="input" placeholder="e.g. Beacon Reviews" />
+        </div>
+        <div>
+          <label class="label" for="setupOperator">Your name (operator)</label>
+          <input id="setupOperator" required class="input" placeholder="e.g. Rahul Sharma" />
+        </div>
+        <div>
+          <label class="label" for="setupEmail">Email</label>
+          <input id="setupEmail" type="email" required class="input" placeholder="operator@example.com" />
+        </div>
+        <div>
+          <label class="label" for="setupPassword">Password (min 6 chars)</label>
+          <input id="setupPassword" type="password" required minlength="6" class="input" placeholder="••••••••" />
+        </div>
+        <div>
+          <label class="label" for="setupPassword2">Confirm password</label>
+          <input id="setupPassword2" type="password" required minlength="6" class="input" placeholder="••••••••" />
+        </div>
+        <div id="setupError" class="hidden text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-2 rounded-lg"></div>
+        <button type="submit" class="btn btn-accent w-full justify-center" style="padding:10px 16px;font-size:14px;">Create account &amp; continue</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================== APP SCREEN ========================== -->
+<div id="screen-app" class="hidden">
+  <div class="flex min-h-screen">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed h-screen overflow-y-auto scroll-hide z-30 -translate-x-full md:translate-x-0 transition-transform" id="sidebar">
+      <div class="p-5 border-b border-gray-200 dark:border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-accent-600 rounded-xl flex items-center justify-center shadow-soft">
+            <i data-lucide="building-2" class="w-5 h-5 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="font-semibold text-sm truncate" id="sidebarAgency">Agency</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Operator dashboard</p>
+          </div>
+        </div>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <button class="nav-item w-full active" data-tab="dashboard"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span></button>
+        <button class="nav-item w-full" data-tab="pipeline"><i data-lucide="git-branch" class="w-4 h-4"></i><span>Pipeline</span></button>
+        <button class="nav-item w-full" data-tab="leads"><i data-lucide="users" class="w-4 h-4"></i><span>Leads</span></button>
+        <button class="nav-item w-full" data-tab="scripts"><i data-lucide="file-text" class="w-4 h-4"></i><span>Scripts</span></button>
+        <button class="nav-item w-full" data-tab="calc"><i data-lucide="calculator" class="w-4 h-4"></i><span>Calculators</span></button>
+        <button class="nav-item w-full" data-tab="calls"><i data-lucide="phone" class="w-4 h-4"></i><span>Calls</span></button>
+        <button class="nav-item w-full" data-tab="money"><i data-lucide="banknote" class="w-4 h-4"></i><span>Money</span></button>
+        <button class="nav-item w-full" data-tab="tools"><i data-lucide="wrench" class="w-4 h-4"></i><span>Tools</span></button>
+        <button class="nav-item w-full" data-tab="kb"><i data-lucide="book-open" class="w-4 h-4"></i><span>Knowledge</span></button>
+        <button class="nav-item w-full" data-tab="settings"><i data-lucide="settings" class="w-4 h-4"></i><span>Settings</span></button>
+      </nav>
+      <div class="p-3 border-t border-gray-200 dark:border-gray-800">
+        <div class="flex items-center gap-3 px-2 py-2">
+          <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center text-xs font-semibold" id="userAvatar">?</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-medium truncate" id="userName">—</p>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate" id="userEmail">—</p>
+          </div>
+          <button onclick="doLogout()" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Log out"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 md:ml-64">
+      <!-- TOP BAR -->
+      <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+        <div class="px-6 py-3 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="md:hidden p-2 -ml-2"><i data-lucide="menu" class="w-5 h-5"></i></button>
+            <h2 class="text-base font-semibold" id="pageTitle">Dashboard</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
+              <span class="pulse-dot w-1.5 h-1.5 rounded-full bg-accent-500"></span>
+              <span id="usCallWindow" class="font-medium">—</span>
+            </div>
+            <div class="hidden md:block text-xs text-gray-500 dark:text-gray-400 px-3 py-1.5" id="liveTimes">—</div>
+            <button onclick="toggleDark()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" title="Toggle theme"><i data-lucide="sun-moon" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <main class="p-6 max-w-7xl">
+
+      <!-- ========================== DASHBOARD ========================== -->
+      <section id="tab-dashboard" class="tab-section space-y-6">
+        <!-- Hero -->
+        <div class="card" style="background: linear-gradient(135deg, rgb(6 78 59), rgb(4 120 87));color:white;border:none;">
+          <p class="text-xs uppercase tracking-wider opacity-80">Aaj ka mission • Today's mission</p>
+          <h3 class="text-2xl font-semibold mt-1">200 dials • 4 demos booked • 1 close</h3>
+          <p class="text-sm opacity-90 mt-2">Best window right now: <span id="bestWindow" class="font-medium">—</span></p>
+          <div class="flex gap-2 mt-4">
+            <button onclick="quickAction('newCall')" class="btn" style="background:white;color:rgb(4 120 87);"><i data-lucide="phone-call" class="w-4 h-4"></i> Log a call</button>
+            <button onclick="quickAction('newDeal')" class="btn" style="background:rgba(255,255,255,0.15);color:white;backdrop-filter:blur(8px);"><i data-lucide="check-circle" class="w-4 h-4"></i> Log a close</button>
+          </div>
+        </div>
+
+        <!-- KPI cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card card-tight">
+            <div class="flex items-center justify-between"><span class="muted">Today's dials</span><i data-lucide="phone" class="w-4 h-4 text-gray-400"></i></div>
+            <div class="stat-num mt-2" id="kpiDials">0</div>
+            <div class="muted mt-1">of <span id="kpiDialsTarget">200</span></div>
+            <div class="mt-3 w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full"><div id="kpiDialsBar" class="bg-accent-500 h-1 rounded-full transition-all" style="width:0"></div></div>
+          </div>
+          <div class="card card-tight">
+            <div class="flex items-center justify-between"><span class="muted">Demos booked</span><i data-lucide="calendar-check" class="w-4 h-4 text-gray-400"></i></div>
+            <div class="stat-num mt-2" id="kpiDemos">0</div>
+            <div class="muted mt-1">target: 4</div>
+            <div class="mt-3 w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full"><div id="kpiDemosBar" class="bg-blue-500 h-1 rounded-full transition-all" style="width:0"></div></div>
+          </div>
+          <div class="card card-tight">
+            <div class="flex items-center justify-between"><span class="muted">Active clients</span><i data-lucide="users" class="w-4 h-4 text-gray-400"></i></div>
+            <div class="stat-num mt-2" id="kpiClients">0</div>
+            <div class="muted mt-1">week-12 target: 10</div>
+          </div>
+          <div class="card card-tight">
+            <div class="flex items-center justify-between"><span class="muted">Current MRR</span><i data-lucide="trending-up" class="w-4 h-4 text-gray-400"></i></div>
+            <div class="stat-num mt-2">$<span id="kpiMRR">0</span></div>
+            <div class="muted mt-1">target: $<span id="kpiMRRtarget">5,000</span></div>
+            <div class="mt-3 w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full"><div id="kpiMRRbar" class="bg-accent-500 h-1 rounded-full transition-all" style="width:0"></div></div>
+          </div>
+        </div>
+
+        <!-- Two-column: checklist + pipeline snapshot -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="card lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold">Daily checklist</h3>
+              <span class="muted">Resets each day</span>
+            </div>
+            <ul class="space-y-2.5 text-sm" id="dailyChecklist">
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="leadlist"><span><strong>Refresh today's call list</strong> — pull 100 motels from your scrape, sort by time zone</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="warmup"><span><strong>Script warm-up</strong> — re-read the Hindi cold-call script, do 3 trial reads aloud</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="block1"><span><strong>Block 1 — US East Coast (9am–12pm ET)</strong> — 80 dials</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="block2"><span><strong>Block 2 — US Central / Mountain (12pm–3pm ET)</strong> — 60 dials</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="block3"><span><strong>Block 3 — US Pacific (3pm–6pm ET)</strong> — 60 dials</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="whatsapp"><span><strong>WhatsApp follow-ups</strong> — send Day-1 / Day-3 / Day-7 messages</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="demos"><span><strong>Take any booked demos</strong> (15 min each)</span></label></li>
+              <li><label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-lg"><input type="checkbox" class="mt-1 accent-accent-600" data-task="wrap"><span><strong>Wrap-up</strong> — log calls, update pipeline, plan tomorrow's list</span></label></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-4">Pipeline snapshot</h3>
+            <div class="space-y-2 text-sm" id="pipelineSnapshot"></div>
+            <button onclick="switchTab('pipeline')" class="btn btn-secondary w-full justify-center mt-4">Open full pipeline <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+
+        <!-- Quick tools -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold">Quick tools</h3>
+            <button onclick="switchTab('tools')" class="muted hover:text-accent-600">View all →</button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="quickToolsGrid"></div>
+        </div>
+      </section>
+
+      <!-- ========================== PIPELINE ========================== -->
+      <section id="tab-pipeline" class="tab-section hidden space-y-6">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold">Sales pipeline</h3>
+              <p class="muted mt-0.5">Click stage arrows on each card to move leads forward.</p>
+            </div>
+            <button onclick="switchTab('leads');setTimeout(openLeadForm,100)" class="btn btn-primary"><i data-lucide="plus" class="w-4 h-4"></i> Add lead</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3" id="pipelineBoard"></div>
+        </div>
+      </section>
+
+      <!-- ========================== LEADS ========================== -->
+      <section id="tab-leads" class="tab-section hidden space-y-6">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h3 class="text-sm font-semibold">Lead bank</h3>
+            <div class="flex gap-2 flex-wrap">
+              <input id="leadSearch" placeholder="Search…" class="input" style="width:200px" />
+              <select id="leadFilter" class="input" style="width:auto">
+                <option value="">All stages</option>
+                <option>Cold</option><option>Contacted</option><option>Demo Booked</option><option>Proposal</option><option>Closed Won</option><option>Closed Lost</option>
+              </select>
+              <button onclick="openLeadForm()" class="btn btn-primary"><i data-lucide="plus" class="w-4 h-4"></i> Add</button>
+              <button onclick="importLeadsCSV()" class="btn btn-secondary"><i data-lucide="upload" class="w-4 h-4"></i> CSV</button>
+              <button onclick="exportLeadsCSV()" class="btn btn-secondary"><i data-lucide="download" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+
+          <div id="leadForm" class="hidden mb-4 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl">
+            <h4 class="text-sm font-semibold mb-3" id="leadFormTitle">Add lead</h4>
+            <div class="grid md:grid-cols-3 gap-3">
+              <input id="lfMotel" placeholder="Motel name *" class="input" />
+              <input id="lfOwner" placeholder="Owner name" class="input" />
+              <input id="lfPhone" placeholder="Phone (US format)" class="input" />
+              <input id="lfCity" placeholder="City" class="input" />
+              <input id="lfState" placeholder="State" class="input" />
+              <input id="lfRooms" type="number" placeholder="Rooms" class="input" />
+              <input id="lfRating" type="number" step="0.1" placeholder="Google rating" class="input" />
+              <input id="lfReviews" type="number" placeholder="# reviews" class="input" />
+              <select id="lfStage" class="input">
+                <option>Cold</option><option>Contacted</option><option>Demo Booked</option><option>Proposal</option><option>Closed Won</option><option>Closed Lost</option>
+              </select>
+              <textarea id="lfNotes" placeholder="Notes" class="input md:col-span-3" rows="2"></textarea>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="saveLead()" class="btn btn-accent">Save</button>
+              <button onclick="closeLeadForm()" class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto -mx-6">
+            <table>
+              <thead>
+                <tr>
+                  <th>Motel</th><th>Owner</th><th>Phone</th><th>Location</th><th>Rating</th><th>Stage</th><th>Last contact</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="leadsTableBody"></tbody>
+            </table>
+            <div id="leadsEmpty" class="hidden p-12 text-center">
+              <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 text-gray-400"></i>
+              <p class="text-sm text-gray-500">No leads yet. Click <strong>Add</strong> or <strong>CSV</strong> to start.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================== SCRIPTS ========================== -->
+      <section id="tab-scripts" class="tab-section hidden space-y-6">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <h3 class="text-sm font-semibold">Sales scripts</h3>
+              <p class="muted mt-0.5">Hindi-first. English used only for getting past the gatekeeper.</p>
+            </div>
+            <div class="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+              <button class="script-lang-btn px-3 py-1.5 rounded text-xs font-medium" data-lang="hi">हिन्दी</button>
+              <button class="script-lang-btn px-3 py-1.5 rounded text-xs font-medium" data-lang="en">English</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="card lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold flex items-center gap-2"><i data-lucide="phone-incoming" class="w-4 h-4 text-accent-600"></i> Cold call — full script</h3>
+              <button onclick="copyScript('coldCallScript')" class="btn btn-secondary"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy</button>
+            </div>
+            <div id="coldCallScript" class="text-sm space-y-3"></div>
+          </div>
+
+          <div class="card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold flex items-center gap-2"><i data-lucide="voicemail" class="w-4 h-4 text-blue-500"></i> Voicemail</h3>
+              <button onclick="copyScript('voicemailScript')" class="btn btn-secondary"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div id="voicemailScript" class="text-sm space-y-2"></div>
+          </div>
+
+          <div class="card lg:col-span-2">
+            <h3 class="text-sm font-semibold mb-4 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-rose-500"></i> Top 10 objections</h3>
+            <div id="objectionsList" class="space-y-2"></div>
+          </div>
+
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-4 flex items-center gap-2"><i data-lucide="message-circle" class="w-4 h-4 text-accent-600"></i> WhatsApp sequence</h3>
+            <div id="whatsappSequence" class="space-y-3"></div>
+          </div>
+
+          <div class="card lg:col-span-3">
+            <h3 class="text-sm font-semibold mb-4 flex items-center gap-2"><i data-lucide="presentation" class="w-4 h-4 text-amber-500"></i> Discovery / demo call (15 min)</h3>
+            <div id="demoStructure" class="text-sm"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================== CALCULATORS ========================== -->
+      <section id="tab-calc" class="tab-section hidden space-y-6">
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-2 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4 text-accent-600"></i> ROI calculator (prospect pitch)</h3>
+            <p class="muted mb-4">Cornell hospitality research: 1-point Google rating lift ≈ 11% ADR uplift.</p>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div><label class="label">Rooms</label><input type="number" id="roiRooms" value="30" class="input" /></div>
+              <div><label class="label">Occupancy %</label><input type="number" id="roiOcc" value="60" class="input" /></div>
+              <div><label class="label">Current ADR ($)</label><input type="number" id="roiADR" value="80" class="input" /></div>
+              <div><label class="label">Rating lift (pts)</label><input type="number" id="roiLift" value="1" step="0.1" class="input" /></div>
+            </div>
+            <button onclick="calcROI()" class="btn btn-accent mt-4">Calculate</button>
+            <div id="roiResult" class="mt-4 p-4 bg-accent-50 dark:bg-accent-900/20 rounded-lg text-sm space-y-1 hidden"></div>
+          </div>
+
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-2 flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-accent-600"></i> Revenue projection</h3>
+            <p class="muted mb-4">Project your monthly profit at N clients.</p>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div><label class="label">Clients</label><input type="number" id="projClients" value="10" class="input" /></div>
+              <div><label class="label">MRR per client</label><input type="number" id="projMRR" value="499" class="input" /></div>
+              <div><label class="label">Setup fee</label><input type="number" id="projSetup" value="497" class="input" /></div>
+              <div><label class="label">Stack cost/mo</label><input type="number" id="projStack" value="1666" class="input" /></div>
+            </div>
+            <button onclick="calcProjection()" class="btn btn-accent mt-4">Calculate</button>
+            <div id="projResult" class="mt-4 p-4 bg-accent-50 dark:bg-accent-900/20 rounded-lg text-sm space-y-1 hidden"></div>
+          </div>
+
+          <div class="card lg:col-span-2">
+            <h3 class="text-sm font-semibold mb-2 flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-blue-500"></i> Call-volume → close-rate</h3>
+            <p class="muted mb-4">Translate daily dial volume into monthly closes and revenue.</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div><label class="label">Dials/day</label><input type="number" id="cvDials" value="200" class="input" /></div>
+              <div><label class="label">Working days/mo</label><input type="number" id="cvDays" value="22" class="input" /></div>
+              <div><label class="label">Dial→conv %</label><input type="number" id="cvR1" value="4" step="0.5" class="input" /></div>
+              <div><label class="label">Demo→close %</label><input type="number" id="cvR2" value="25" class="input" /></div>
+            </div>
+            <button onclick="calcCallVolume()" class="btn btn-accent mt-4">Calculate</button>
+            <div id="cvResult" class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm space-y-1 hidden"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================== MONEY ========================== -->
+      <section id="tab-money" class="tab-section hidden space-y-6">
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="card card-tight">
+            <span class="muted">Current MRR</span>
+            <div class="stat-num mt-2">$<span id="moneyMRR">0</span></div>
+            <div class="muted mt-1"><span id="moneyMRRClients">0</span> active clients</div>
+          </div>
+          <div class="card card-tight">
+            <span class="muted">Setup fees (this month)</span>
+            <div class="stat-num mt-2">$<span id="moneySetup">0</span></div>
+            <div class="muted mt-1"><span id="moneySetupCount">0</span> new clients</div>
+          </div>
+          <div class="card card-tight">
+            <span class="muted">Annual run-rate</span>
+            <div class="stat-num mt-2">$<span id="moneyARR">0</span></div>
+            <div class="muted mt-1">MRR × 12</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-4">Path to $5K MRR</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between muted"><span>$0</span><span>$1K</span><span>$2.5K</span><span>$5K</span></div>
+            <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+              <div id="moneyPathBar" class="h-3 bg-accent-500 transition-all" style="width:0"></div>
+            </div>
+            <p class="muted text-center">You're at <strong id="moneyPathPct">0%</strong> of your week-12 target</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-4">Closed deals</h3>
+          <div class="overflow-x-auto -mx-6">
+            <table>
+              <thead><tr><th>Date</th><th>Motel</th><th>Owner</th><th>MRR</th><th>Setup</th><th></th></tr></thead>
+              <tbody id="dealsTableBody"></tbody>
+            </table>
+            <div id="dealsEmpty" class="hidden p-10 text-center">
+              <i data-lucide="trophy" class="w-10 h-10 mx-auto mb-3 text-gray-400"></i>
+              <p class="text-sm text-gray-500">No deals yet. Your first $499 is one good call away.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================== CALLS ========================== -->
+      <section id="tab-calls" class="tab-section hidden space-y-6">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <h3 class="text-sm font-semibold">Call history</h3>
+              <p class="muted mt-0.5">Every call made through the dashboard. Auto-logged with disposition + notes.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="twilioStatus" class="badge bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Twilio: not configured</span>
+              <button onclick="exportCallsCSV()" class="btn btn-secondary"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div class="card card-tight" style="border:1px solid rgb(229 231 235);">
+              <span class="muted">Total calls</span>
+              <div class="stat-num mt-2" id="callsTotal">0</div>
+            </div>
+            <div class="card card-tight" style="border:1px solid rgb(229 231 235);">
+              <span class="muted">Talk time (today)</span>
+              <div class="stat-num mt-2" id="callsTalkTime">0m</div>
+            </div>
+            <div class="card card-tight" style="border:1px solid rgb(229 231 235);">
+              <span class="muted">Connect rate</span>
+              <div class="stat-num mt-2" id="callsConnectRate">0%</div>
+            </div>
+            <div class="card card-tight" style="border:1px solid rgb(229 231 235);">
+              <span class="muted">Demos booked</span>
+              <div class="stat-num mt-2" id="callsDemosFromCalls">0</div>
+            </div>
+          </div>
+          <div class="overflow-x-auto -mx-6">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th><th>Lead</th><th>Number</th><th>Dir</th><th>Duration</th><th>Disposition</th><th>Notes</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="callsTableBody"></tbody>
+            </table>
+            <div id="callsEmpty" class="hidden p-12 text-center">
+              <i data-lucide="phone-off" class="w-10 h-10 mx-auto mb-3 text-gray-400"></i>
+              <p class="text-sm text-gray-500">No calls yet. Configure Twilio in Settings, then click any phone number in Leads.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================== TOOLS ========================== -->
+      <section id="tab-tools" class="tab-section hidden space-y-6">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="fullToolsGrid"></div>
+      </section>
+
+      <!-- ========================== KNOWLEDGE ========================== -->
+      <section id="tab-kb" class="tab-section hidden space-y-3" id="kbList"></section>
+
+      <!-- ========================== SETTINGS ========================== -->
+      <section id="tab-settings" class="tab-section hidden space-y-6">
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-4">Account &amp; agency</h3>
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div><label class="label">Agency name</label><input id="setAgency" class="input" /></div>
+            <div><label class="label">Operator name</label><input id="setOperator" class="input" /></div>
+            <div><label class="label">Email</label><input id="setEmail" type="email" class="input" /></div>
+            <div><label class="label">Operator timezone</label>
+              <select id="setTZ" class="input">
+                <option value="Asia/Kolkata">Asia/Kolkata (IST, India)</option>
+                <option value="Asia/Karachi">Asia/Karachi (PKT, Pakistan)</option>
+                <option value="Asia/Dhaka">Asia/Dhaka (BDT, Bangladesh)</option>
+                <option value="Asia/Manila">Asia/Manila (PHT, Philippines)</option>
+                <option value="Asia/Dubai">Asia/Dubai (GST, UAE)</option>
+              </select>
+            </div>
+            <div><label class="label">Setup fee ($)</label><input id="setSetup" type="number" class="input" /></div>
+            <div><label class="label">Monthly fee ($)</label><input id="setMRR" type="number" class="input" /></div>
+          </div>
+          <button onclick="saveSettings()" class="btn btn-accent mt-4">Save changes</button>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-2">Twilio Voice — in-browser calling</h3>
+          <p class="muted mb-4">Configure once. Get values from your Twilio Console after deploying the token Function (see <code>operations/twilio-voice-setup.md</code>).</p>
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div><label class="label">Token endpoint URL</label><input id="twToken" class="input" placeholder="https://xxxx.twil.io/voice-token" /></div>
+            <div><label class="label">Your Twilio number (caller ID)</label><input id="twNumber" class="input" placeholder="+15551234567" /></div>
+            <div><label class="label">TwiML App SID (optional)</label><input id="twAppSid" class="input" placeholder="AP..." /></div>
+            <div><label class="label">Test mode</label>
+              <select id="twTestMode" class="input">
+                <option value="off">Off (real calls)</option>
+                <option value="on">On (simulated, no real call)</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button onclick="saveTwilio()" class="btn btn-accent">Save</button>
+            <button onclick="testTwilioConnection()" class="btn btn-secondary"><i data-lucide="zap" class="w-4 h-4"></i> Test connection</button>
+          </div>
+          <div id="twResult" class="hidden mt-3 text-xs px-3 py-2 rounded-lg"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-4">Change password</h3>
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div><label class="label">Current password</label><input id="pwCurrent" type="password" class="input" /></div>
+            <div></div>
+            <div><label class="label">New password</label><input id="pwNew" type="password" class="input" /></div>
+            <div><label class="label">Confirm new password</label><input id="pwNew2" type="password" class="input" /></div>
+          </div>
+          <div id="pwError" class="hidden mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg"></div>
+          <button onclick="changePassword()" class="btn btn-primary mt-4">Update password</button>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-4">Data &amp; backup</h3>
+          <p class="muted mb-4">All your data is stored locally in this browser. Export regularly. Import to restore on a new device.</p>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="exportAll()" class="btn btn-secondary"><i data-lucide="download" class="w-4 h-4"></i> Export all data</button>
+            <label class="btn btn-secondary cursor-pointer"><i data-lucide="upload" class="w-4 h-4"></i> Import backup<input type="file" accept=".json" class="hidden" onchange="importAll(event)" /></label>
+            <button onclick="resetAll()" class="btn btn-danger"><i data-lucide="trash-2" class="w-4 h-4"></i> Reset everything</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-2">About</h3>
+          <p class="muted">Single-file operator dashboard. v2.0 • Hindi-first edition • Built May 2026.</p>
+        </div>
+      </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ========================== FLOATING DIALER ========================== -->
+<div id="dialerPanel" class="hidden fixed bottom-6 right-6 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-50 overflow-hidden">
+  <div class="bg-accent-600 text-white p-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-2 h-2 rounded-full bg-white pulse-dot" id="dialerStatusDot"></div>
+      <div class="min-w-0">
+        <p class="text-xs opacity-80 uppercase tracking-wider" id="dialerStatus">Idle</p>
+        <p class="font-semibold text-sm truncate" id="dialerLeadName">—</p>
+      </div>
+    </div>
+    <button onclick="closeDialer()" class="opacity-70 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="p-4 space-y-3">
+    <div class="text-center">
+      <p class="font-mono text-lg" id="dialerNumber">+1 (___) ___-____</p>
+      <p class="text-xs muted mt-1" id="dialerTimer">00:00</p>
+    </div>
+    <div class="grid grid-cols-3 gap-2" id="dialerKeypad" style="display:none;">
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('1')">1</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('2')">2</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('3')">3</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('4')">4</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('5')">5</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('6')">6</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('7')">7</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('8')">8</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('9')">9</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('*')">*</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('0')">0</button>
+      <button class="btn btn-secondary justify-center" onclick="sendDTMF('#')">#</button>
+    </div>
+    <div class="flex gap-2 justify-center" id="dialerActions">
+      <button id="btnMute" onclick="toggleMute()" class="btn btn-secondary hidden"><i data-lucide="mic-off" class="w-4 h-4"></i> Mute</button>
+      <button id="btnKeypad" onclick="toggleKeypad()" class="btn btn-secondary hidden"><i data-lucide="grid-3x3" class="w-4 h-4"></i> Keypad</button>
+      <button id="btnCall" onclick="placeCall()" class="btn" style="background:rgb(5 150 105);color:white;display:none;"><i data-lucide="phone" class="w-4 h-4"></i> Call</button>
+      <button id="btnHangup" onclick="hangupCall()" class="btn hidden" style="background:rgb(220 38 38);color:white;"><i data-lucide="phone-off" class="w-4 h-4"></i> End call</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================== DISPOSITION MODAL ========================== -->
+<div id="dispositionModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-md w-full">
+    <h3 class="text-base font-semibold mb-1">Call wrap-up</h3>
+    <p class="muted mb-4">How did the call go with <span id="dispLeadName">—</span>? <span id="dispDuration"></span></p>
+    <div class="space-y-2 mb-4">
+      <button onclick="setDisposition('connected_demo_booked')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">🎯 Demo booked</p>
+        <p class="muted">Owner agreed to a 15-min discovery call. Lead moves to "Demo Booked".</p>
+      </button>
+      <button onclick="setDisposition('connected_closed')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">💰 Closed deal</p>
+        <p class="muted">Owner agreed to sign up. Lead moves to "Closed Won".</p>
+      </button>
+      <button onclick="setDisposition('connected_followup')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">📞 Connected — follow up later</p>
+        <p class="muted">Talked to owner, wants to think / talk to family. Lead moves to "Contacted".</p>
+      </button>
+      <button onclick="setDisposition('not_interested')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">🚫 Not interested</p>
+        <p class="muted">Hard no. Lead moves to "Closed Lost".</p>
+      </button>
+      <button onclick="setDisposition('voicemail')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">📭 Voicemail left</p>
+        <p class="muted">Couldn't reach owner, left Hindi voicemail. Stays at current stage.</p>
+      </button>
+      <button onclick="setDisposition('no_answer')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">📵 No answer / busy</p>
+        <p class="muted">Phone rang out or busy. Stays at current stage.</p>
+      </button>
+      <button onclick="setDisposition('wrong_number')" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 text-sm">
+        <p class="font-semibold">❌ Wrong number / disconnected</p>
+        <p class="muted">Bad data — number doesn't reach the motel. Lead flagged.</p>
+      </button>
+    </div>
+    <label class="label">Notes (optional)</label>
+    <textarea id="dispNotes" class="input" rows="3" placeholder="Anything memorable from the call — owner's name, family, objections, next-step…"></textarea>
+    <div class="flex gap-2 mt-4">
+      <button onclick="saveDisposition()" class="btn btn-accent flex-1 justify-center">Save &amp; close</button>
+      <button onclick="skipDisposition()" class="btn btn-secondary">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================== SCRIPTS ========================== -->
+<script>
+/* ============== STATE & AUTH ============== */
+const DEFAULTS = {
+  agencyName: '',
+  operatorName: '',
+  operatorEmail: '',
+  operatorTZ: 'Asia/Kolkata',
+  setupFee: 497,
+  monthlyFee: 499,
+  targetMRR: 5000,
+  dailyDialsTarget: 200,
+  dailyDemosTarget: 4,
+  leads: [],
+  deals: [],
+  calls: [],
+  twilio: { tokenUrl: '', callerNumber: '', appSid: '', testMode: 'off' },
+  dailyKPIs: {},
+  checklist: {},
+  darkMode: false,
+  passwordHash: '',
+  passwordSalt: ''
+};
+let state = loadState();
+const SESSION_KEY = 'motelAgencySession';
+const SESSION_HOURS = 8;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('motelAgencyState');
+    if (!raw) return structuredClone(DEFAULTS);
+    return { ...structuredClone(DEFAULTS), ...JSON.parse(raw) };
+  } catch (e) { return structuredClone(DEFAULTS); }
+}
+function saveState() { localStorage.setItem('motelAgencyState', JSON.stringify(state)); }
+function todayKey() { return new Date().toISOString().slice(0,10); }
+
+async function hashPassword(pw, salt) {
+  const enc = new TextEncoder().encode(pw + salt);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function randSalt() {
+  const a = new Uint8Array(16);
+  crypto.getRandomValues(a);
+  return Array.from(a).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function isLoggedIn() {
+  const s = sessionStorage.getItem(SESSION_KEY);
+  if (!s) return false;
+  try {
+    const { exp } = JSON.parse(s);
+    if (Date.now() > exp) { sessionStorage.removeItem(SESSION_KEY); return false; }
+    return true;
+  } catch (e) { return false; }
+}
+function setSession() {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ exp: Date.now() + SESSION_HOURS*3600*1000 }));
+}
+
+/* ============== ENTRY ============== */
+async function entry() {
+  document.documentElement.classList.toggle('dark', !!state.darkMode);
+  if (!state.passwordHash) {
+    showScreen('setup');
+  } else if (!isLoggedIn()) {
+    showScreen('login');
+    document.getElementById('loginEmail').value = state.operatorEmail || '';
+  } else {
+    enterApp();
+  }
+  if (window.lucide) lucide.createIcons();
+}
+function showScreen(name) {
+  ['login','setup','app'].forEach(n => document.getElementById('screen-'+n).classList.add('hidden'));
+  document.getElementById('screen-'+name).classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function doSetup(e) {
+  e.preventDefault();
+  const agency = document.getElementById('setupAgency').value.trim();
+  const operator = document.getElementById('setupOperator').value.trim();
+  const email = document.getElementById('setupEmail').value.trim().toLowerCase();
+  const pw1 = document.getElementById('setupPassword').value;
+  const pw2 = document.getElementById('setupPassword2').value;
+  const err = document.getElementById('setupError');
+  err.classList.add('hidden');
+  if (pw1 !== pw2) { err.textContent = 'Passwords do not match.'; err.classList.remove('hidden'); return false; }
+  if (pw1.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.classList.remove('hidden'); return false; }
+  const salt = randSalt();
+  const hash = await hashPassword(pw1, salt);
+  state.agencyName = agency;
+  state.operatorName = operator;
+  state.operatorEmail = email;
+  state.passwordSalt = salt;
+  state.passwordHash = hash;
+  saveState();
+  setSession();
+  enterApp();
+  return false;
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pw = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  if (email !== state.operatorEmail) { err.textContent = 'Email or password is incorrect.'; err.classList.remove('hidden'); return false; }
+  const hash = await hashPassword(pw, state.passwordSalt);
+  if (hash !== state.passwordHash) { err.textContent = 'Email or password is incorrect.'; err.classList.remove('hidden'); return false; }
+  setSession();
+  enterApp();
+  return false;
+}
+
+function doLogout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function enterApp() {
+  showScreen('app');
+  initApp();
+}
+
+async function changePassword() {
+  const cur = document.getElementById('pwCurrent').value;
+  const a = document.getElementById('pwNew').value;
+  const b = document.getElementById('pwNew2').value;
+  const err = document.getElementById('pwError');
+  err.classList.add('hidden');
+  const curHash = await hashPassword(cur, state.passwordSalt);
+  if (curHash !== state.passwordHash) { err.textContent = 'Current password incorrect.'; err.classList.remove('hidden'); return; }
+  if (a !== b) { err.textContent = 'New passwords do not match.'; err.classList.remove('hidden'); return; }
+  if (a.length < 6) { err.textContent = 'New password must be at least 6 characters.'; err.classList.remove('hidden'); return; }
+  const salt = randSalt();
+  state.passwordSalt = salt;
+  state.passwordHash = await hashPassword(a, salt);
+  saveState();
+  ['pwCurrent','pwNew','pwNew2'].forEach(id => document.getElementById(id).value = '');
+  alert('Password updated.');
+}
+
+/* ============== APP INIT ============== */
+function initApp() {
+  document.getElementById('sidebarAgency').textContent = state.agencyName || 'Motel Agency';
+  document.getElementById('userName').textContent = state.operatorName || '—';
+  document.getElementById('userEmail').textContent = state.operatorEmail || '—';
+  document.getElementById('userAvatar').textContent = (state.operatorName || '?').charAt(0).toUpperCase();
+  document.querySelectorAll('.nav-item').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  renderQuickTools();
+  renderFullTools();
+  renderKPIs();
+  renderPipelineSnapshot();
+  renderPipelineBoard();
+  renderLeadsTable();
+  renderScripts();
+  renderObjections();
+  renderWhatsApp();
+  renderDemoStructure();
+  renderKB();
+  renderMoney();
+  renderCalls();
+  loadSettingsForm();
+  loadTwilioSettings();
+  loadChecklistState();
+  setupSearchAndFilter();
+  setupScriptLangButtons();
+  updateTimes();
+  setInterval(updateTimes, 30000);
+  initTwilioDevice();
+  if (window.lucide) lucide.createIcons();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  const titles = { dashboard:'Dashboard', pipeline:'Pipeline', leads:'Leads', scripts:'Scripts', calc:'Calculators', money:'Money', tools:'Tools', kb:'Knowledge base', settings:'Settings' };
+  document.getElementById('pageTitle').textContent = titles[name] || 'Dashboard';
+  if (window.lucide) lucide.createIcons();
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('-translate-x-full');
+}
+
+function toggleDark() {
+  state.darkMode = !state.darkMode;
+  document.documentElement.classList.toggle('dark', state.darkMode);
+  saveState();
+}
+
+/* ============== TIMES ============== */
+function updateTimes() {
+  const tz = state.operatorTZ || 'Asia/Kolkata';
+  const fmt = (z) => new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true, timeZone:z });
+  document.getElementById('liveTimes').textContent = `You ${fmt(tz)} • ET ${fmt('America/New_York')} • PT ${fmt('America/Los_Angeles')}`;
+  const etHour = parseInt(new Date().toLocaleString('en-US', { hour:'2-digit', hour12:false, timeZone:'America/New_York' }));
+  const ptHour = parseInt(new Date().toLocaleString('en-US', { hour:'2-digit', hour12:false, timeZone:'America/Los_Angeles' }));
+  let label = '';
+  if (etHour >= 9 && etHour < 12) label = 'Prime: US East Coast';
+  else if (etHour >= 12 && etHour < 15) label = 'Good: Central/Mountain';
+  else if (ptHour >= 12 && ptHour < 18) label = 'Good: US West Coast';
+  else label = 'Off-hours: do WhatsApp follow-ups';
+  document.getElementById('usCallWindow').textContent = label;
+  document.getElementById('bestWindow').textContent = label;
+}
+
+/* ============== KPIs ============== */
+function renderKPIs() {
+  const k = state.dailyKPIs[todayKey()] || { dials:0, demos:0 };
+  document.getElementById('kpiDials').textContent = k.dials;
+  document.getElementById('kpiDialsTarget').textContent = state.dailyDialsTarget;
+  document.getElementById('kpiDialsBar').style.width = Math.min(100, k.dials/state.dailyDialsTarget*100)+'%';
+  document.getElementById('kpiDemos').textContent = k.demos;
+  document.getElementById('kpiDemosBar').style.width = Math.min(100, k.demos/state.dailyDemosTarget*100)+'%';
+  const won = state.deals.filter(d => d.stage !== 'lost');
+  document.getElementById('kpiClients').textContent = won.length;
+  const mrr = won.reduce((s,d) => s + (d.mrr||0), 0);
+  document.getElementById('kpiMRR').textContent = mrr.toLocaleString();
+  document.getElementById('kpiMRRtarget').textContent = state.targetMRR.toLocaleString();
+  document.getElementById('kpiMRRbar').style.width = Math.min(100, mrr/state.targetMRR*100)+'%';
+}
+
+/* ============== TOOLS ============== */
+const TOOLS = [
+  { name:'GoHighLevel', url:'https://app.gohighlevel.com', icon:'globe', cat:'CRM / Delivery' },
+  { name:'Stripe', url:'https://dashboard.stripe.com', icon:'credit-card', cat:'Payments' },
+  { name:'Mercury Bank', url:'https://app.mercury.com', icon:'banknote', cat:'Payments' },
+  { name:'Wise Business', url:'https://wise.com/business', icon:'arrow-left-right', cat:'Payments' },
+  { name:'JustCall', url:'https://app.justcall.io', icon:'phone', cat:'Phone' },
+  { name:'WhatsApp Web', url:'https://web.whatsapp.com', icon:'message-circle', cat:'Phone' },
+  { name:'360dialog', url:'https://hub.360dialog.com', icon:'send', cat:'Phone' },
+  { name:'Apollo', url:'https://app.apollo.io', icon:'database', cat:'Leads' },
+  { name:'Outscraper', url:'https://outscraper.com/dashboard', icon:'download-cloud', cat:'Leads' },
+  { name:'Google Maps', url:'https://maps.google.com', icon:'map-pin', cat:'Leads' },
+  { name:'AAHOA', url:'https://www.aahoa.com/members', icon:'users', cat:'Leads' },
+  { name:'Calendly', url:'https://calendly.com/event_types/user/me', icon:'calendar', cat:'Scheduling' },
+  { name:'Dropbox Sign', url:'https://www.hellosign.com/home/myAccount', icon:'file-signature', cat:'Contracts' },
+  { name:'Google Business', url:'https://business.google.com', icon:'star', cat:'Delivery' },
+  { name:'Loom', url:'https://www.loom.com', icon:'video', cat:'Training' },
+  { name:'Notion', url:'https://www.notion.so', icon:'notebook', cat:'Ops' }
+];
+function renderQuickTools() {
+  document.getElementById('quickToolsGrid').innerHTML = TOOLS.slice(0,8).map(t => `
+    <a href="${t.url}" target="_blank" class="flex items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition text-xs">
+      <i data-lucide="${t.icon}" class="w-3.5 h-3.5 text-gray-500"></i>
+      <span class="font-medium truncate">${t.name}</span>
+    </a>`).join('');
+}
+function renderFullTools() {
+  const grid = document.getElementById('fullToolsGrid');
+  const byCat = {};
+  TOOLS.forEach(t => { (byCat[t.cat] = byCat[t.cat] || []).push(t); });
+  grid.innerHTML = Object.entries(byCat).map(([cat, tools]) => `
+    <div class="card">
+      <p class="muted uppercase tracking-wider mb-3" style="font-size:11px;">${cat}</p>
+      <div class="space-y-1">
+        ${tools.map(t => `<a href="${t.url}" target="_blank" class="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
+          <div class="flex items-center gap-3"><i data-lucide="${t.icon}" class="w-4 h-4 text-gray-500"></i><span class="text-sm font-medium">${t.name}</span></div>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-gray-400 group-hover:text-accent-600"></i>
+        </a>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+/* ============== PIPELINE ============== */
+const STAGES = ['Cold','Contacted','Demo Booked','Proposal','Closed Won'];
+const STAGE_COLOR = { 'Cold':'gray', 'Contacted':'blue', 'Demo Booked':'amber', 'Proposal':'violet', 'Closed Won':'emerald', 'Closed Lost':'rose' };
+const STAGE_BG = { 'Cold':'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300', 'Contacted':'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300', 'Demo Booked':'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300', 'Proposal':'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300', 'Closed Won':'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300', 'Closed Lost':'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300' };
+function renderPipelineSnapshot() {
+  const counts = STAGES.map(s => state.leads.filter(l => l.stage === s).length);
+  document.getElementById('pipelineSnapshot').innerHTML = STAGES.map((s,i) => `
+    <div class="flex items-center justify-between p-2 rounded-lg">
+      <span class="badge ${STAGE_BG[s]}">${s}</span>
+      <span class="text-sm font-semibold">${counts[i]}</span>
+    </div>`).join('');
+}
+function renderPipelineBoard() {
+  document.getElementById('pipelineBoard').innerHTML = STAGES.map(stage => {
+    const cards = state.leads.filter(l => l.stage === stage);
+    return `<div class="bg-gray-50 dark:bg-gray-800/40 rounded-xl p-3 min-h-[280px]">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <span class="badge ${STAGE_BG[stage]}">${stage}</span>
+        <span class="muted">${cards.length}</span>
+      </div>
+      <div class="space-y-2">
+        ${cards.map(l => `<div class="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700 text-sm cursor-pointer hover:border-accent-500 transition" onclick="editLead('${l.id}')">
+          <p class="font-semibold truncate text-sm">${escHtml(l.motel)}</p>
+          <p class="muted truncate">${escHtml(l.owner||'—')} ${l.city?`• ${escHtml(l.city)}`:''}</p>
+          ${l.rating ? `<p class="muted mt-1">⭐ ${l.rating}</p>`:''}
+          <div class="flex gap-1 mt-2 flex-wrap">${STAGES.filter(s => s !== l.stage).map(s => `<button onclick="event.stopPropagation();moveLead('${l.id}','${s}')" class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 hover:bg-accent-100 dark:hover:bg-accent-900/40">→ ${s.split(' ')[0]}</button>`).join('')}</div>
+        </div>`).join('') || '<p class="muted text-center py-8">empty</p>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============== LEADS ============== */
+function renderLeadsTable() {
+  const filter = document.getElementById('leadFilter')?.value || '';
+  const search = (document.getElementById('leadSearch')?.value || '').toLowerCase();
+  const filtered = state.leads.filter(l => {
+    if (filter && l.stage !== filter) return false;
+    if (search && !(`${l.motel} ${l.owner||''} ${l.city||''}`.toLowerCase().includes(search))) return false;
+    return true;
+  });
+  document.getElementById('leadsEmpty').classList.toggle('hidden', filtered.length > 0);
+  document.getElementById('leadsTableBody').innerHTML = filtered.map(l => `
+    <tr>
+      <td><strong>${escHtml(l.motel)}</strong></td>
+      <td>${escHtml(l.owner||'—')}</td>
+      <td>${l.phone ? `<div class="flex items-center gap-1.5"><button onclick="callLead('${l.id}')" title="Call via Twilio" class="text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/30 rounded p-1"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button><span class="muted">${escHtml(formatPhone(l.phone))}</span></div>` : '—'}</td>
+      <td class="muted">${escHtml(l.city||'')}${l.state?', '+escHtml(l.state):''}</td>
+      <td>${l.rating ? `⭐ ${l.rating}` : '—'}</td>
+      <td><span class="badge ${STAGE_BG[l.stage]||'bg-gray-100'}">${l.stage}</span></td>
+      <td class="muted">${l.lastContact || '—'}</td>
+      <td class="text-right">
+        <button onclick="editLead('${l.id}')" class="text-xs text-accent-600 hover:underline">edit</button>
+        <button onclick="deleteLead('${l.id}')" class="text-xs text-rose-500 hover:underline ml-2">×</button>
+      </td>
+    </tr>`).join('');
+}
+let editingLeadId = null;
+function openLeadForm() {
+  document.getElementById('leadForm').classList.remove('hidden');
+  document.getElementById('leadFormTitle').textContent = editingLeadId ? 'Edit lead' : 'Add lead';
+  if (!editingLeadId) ['lfMotel','lfOwner','lfPhone','lfCity','lfState','lfRooms','lfRating','lfReviews','lfNotes'].forEach(id => document.getElementById(id).value = '');
+  switchTab('leads');
+  setTimeout(() => document.getElementById('lfMotel').focus(), 50);
+}
+function closeLeadForm() {
+  document.getElementById('leadForm').classList.add('hidden');
+  editingLeadId = null;
+}
+function saveLead() {
+  const data = {
+    motel: document.getElementById('lfMotel').value.trim(),
+    owner: document.getElementById('lfOwner').value.trim(),
+    phone: document.getElementById('lfPhone').value.trim(),
+    city: document.getElementById('lfCity').value.trim(),
+    state: document.getElementById('lfState').value.trim(),
+    rooms: parseInt(document.getElementById('lfRooms').value) || null,
+    rating: parseFloat(document.getElementById('lfRating').value) || null,
+    reviews: parseInt(document.getElementById('lfReviews').value) || null,
+    stage: document.getElementById('lfStage').value,
+    notes: document.getElementById('lfNotes').value.trim(),
+    lastContact: todayKey()
+  };
+  if (!data.motel) { alert('Motel name required'); return; }
+  if (editingLeadId) {
+    const idx = state.leads.findIndex(l => l.id === editingLeadId);
+    if (idx >= 0) state.leads[idx] = { ...state.leads[idx], ...data };
+  } else {
+    data.id = 'L' + Date.now() + Math.random().toString(36).slice(2,5);
+    data.addedDate = todayKey();
+    state.leads.push(data);
+  }
+  saveState();
+  closeLeadForm();
+  refreshAll();
+}
+function editLead(id) {
+  const l = state.leads.find(x => x.id === id);
+  if (!l) return;
+  editingLeadId = id;
+  openLeadForm();
+  document.getElementById('lfMotel').value = l.motel || '';
+  document.getElementById('lfOwner').value = l.owner || '';
+  document.getElementById('lfPhone').value = l.phone || '';
+  document.getElementById('lfCity').value = l.city || '';
+  document.getElementById('lfState').value = l.state || '';
+  document.getElementById('lfRooms').value = l.rooms || '';
+  document.getElementById('lfRating').value = l.rating || '';
+  document.getElementById('lfReviews').value = l.reviews || '';
+  document.getElementById('lfStage').value = l.stage || 'Cold';
+  document.getElementById('lfNotes').value = l.notes || '';
+}
+function deleteLead(id) {
+  if (!confirm('Delete this lead?')) return;
+  state.leads = state.leads.filter(l => l.id !== id);
+  saveState();
+  refreshAll();
+}
+function moveLead(id, newStage) {
+  const l = state.leads.find(x => x.id === id);
+  if (!l) return;
+  l.stage = newStage;
+  l.lastContact = todayKey();
+  if (newStage === 'Closed Won') {
+    const exists = state.deals.find(d => d.leadId === id);
+    if (!exists) {
+      state.deals.push({
+        id: 'D' + Date.now(),
+        leadId: id,
+        signedDate: todayKey(),
+        mrr: state.monthlyFee,
+        setupCollected: state.setupFee,
+        stage: 'won',
+        motel: l.motel,
+        owner: l.owner
+      });
+    }
+  }
+  saveState();
+  refreshAll();
+}
+function setupSearchAndFilter() {
+  document.getElementById('leadSearch').addEventListener('input', renderLeadsTable);
+  document.getElementById('leadFilter').addEventListener('change', renderLeadsTable);
+}
+
+function importLeadsCSV() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.csv';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+      const ix = name => headers.findIndex(h => h.includes(name));
+      const map = { motel: ix('motel') >= 0 ? ix('motel') : ix('name'), owner: ix('owner'), phone: ix('phone'), city: ix('city'), state: ix('state'), rating: ix('rating'), reviews: ix('review') };
+      let count = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
+        if (map.motel < 0 || !cols[map.motel]) continue;
+        state.leads.push({
+          id: 'L' + Date.now() + i,
+          motel: cols[map.motel] || '',
+          owner: map.owner >= 0 ? cols[map.owner] || '' : '',
+          phone: map.phone >= 0 ? cols[map.phone] || '' : '',
+          city: map.city >= 0 ? cols[map.city] || '' : '',
+          state: map.state >= 0 ? cols[map.state] || '' : '',
+          rating: map.rating >= 0 ? parseFloat(cols[map.rating]) || null : null,
+          reviews: map.reviews >= 0 ? parseInt(cols[map.reviews]) || null : null,
+          stage: 'Cold',
+          addedDate: todayKey()
+        });
+        count++;
+      }
+      saveState();
+      refreshAll();
+      alert(`Imported ${count} leads.`);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+function exportLeadsCSV() {
+  const cols = ['motel','owner','phone','city','state','rating','reviews','stage','notes','lastContact'];
+  const rows = state.leads.map(l => cols.map(c => `"${(l[c]||'').toString().replace(/"/g,'""')}"`).join(','));
+  download([cols.join(','), ...rows].join('\n'), `leads-${todayKey()}.csv`, 'text/csv');
+}
+
+/* ============== SCRIPTS (HINDI-FIRST) ============== */
+let currentLang = 'hi';
+function setupScriptLangButtons() {
+  document.querySelectorAll('.script-lang-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      currentLang = b.dataset.lang;
+      document.querySelectorAll('.script-lang-btn').forEach(x => {
+        x.classList.toggle('bg-white', x.dataset.lang === currentLang);
+        x.classList.toggle('dark:bg-gray-700', x.dataset.lang === currentLang);
+        x.classList.toggle('shadow-soft', x.dataset.lang === currentLang);
+        x.classList.toggle('text-gray-900', x.dataset.lang === currentLang);
+        x.classList.toggle('dark:text-white', x.dataset.lang === currentLang);
+      });
+      renderScripts();
+    });
+  });
+  document.querySelector('.script-lang-btn[data-lang="hi"]').classList.add('bg-white','dark:bg-gray-700','shadow-soft','text-gray-900','dark:text-white');
+}
+function renderScripts() {
+  document.getElementById('coldCallScript').innerHTML = SCRIPTS.coldCall[currentLang];
+  document.getElementById('voicemailScript').innerHTML = SCRIPTS.voicemail[currentLang];
+  if (window.lucide) lucide.createIcons();
+}
+const SCRIPTS = {
+  coldCall: {
+    hi: `
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 1 — Gatekeeper (English)</p>
+        <p>"Hi, may I please speak with the owner? I'm calling from <em>[Agency Name]</em> regarding your Google reviews."</p>
+        <p class="muted italic mt-2">If "owner not available" → "No problem, can I get his name and the best time to reach him?"</p>
+      </div>
+      <div class="p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg border-l-2 border-accent-500">
+        <p class="text-[11px] uppercase tracking-wider text-accent-700 dark:text-accent-300 font-semibold mb-1">Step 2 — Owner answers → SWITCH TO HINDI</p>
+        <p class="font-medium">"Patel sir, namaste. Main bhi Indian hoon. Aapko ek minute time mil sakta hai?"</p>
+        <p class="muted italic mt-1">(Mr. Patel, hello. I'm also Indian. Can I get a minute of your time?)</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 3 — Problem agitation (two-pronged)</p>
+        <p>"Main motel owners ki Google reviews aur reputation par kaam karta hoon. <em>[Motel name]</em> ke baare mein do baatein. <strong>Pehli:</strong> aapki rating <em>[3.X]</em> hai, aapke paas wale <em>[neighbour]</em> ki <em>[4.X]</em>. <strong>Doosri — yeh important hai:</strong> Booking.com ne 2025 mein algorithm change kar diya hai. Sirf last 3 mahine ke reviews 2-3 times zyada count karte hain ab. Purane reviews ki value khatam ho gayi. Agar fresh reviews nahi aa rahe har hafte, aap quietly Booking.com search results se neeche ja rahe ho. Aapko pata tha yeh policy change?"</p>
+        <p class="muted italic mt-1">(I work on Google reviews and reputation for motel owners. Two things about [Motel]. First: you're at [3.X] stars, your neighbour at [4.X]. Second — this is important: Booking.com changed their algorithm in 2025. Only reviews from the last 3 months now count 2-3× more. Old reviews stopped mattering. If fresh reviews aren't coming in weekly, you're quietly slipping down Booking.com search results. Did you know about this policy change?)</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 4 — Solution preview (compliance-safe)</p>
+        <p>"Mere paas ek fully-automated system hai. Har guest ko checkout ke 18 ghante baad ek SMS jaata hai — sabko same message. Guest ek simple landing page pe pohchta hai jisme do equal buttons hain side-by-side: <strong>'Share publicly on Google'</strong> aur <strong>'Send private feedback'</strong>. Guest khud choose karta hai. Yeh Google ki latest policy aur FTC Consumer Review Rule — dono ke 100% compliant hai. Koi rating-gating nahi, koi cheating nahi. Typical result 60 din mein: 15-25 fresh Google reviews per month + private feedback se aapko service issues pata chalte hain pehle ki public reviews mein damage ho. Setup $497, monthly $499. 60-day money-back guarantee."</p>
+        <p class="muted italic mt-1">(I have a fully-automated system. Every guest gets the same SMS 18 hours after checkout. Same message for everyone. Guest lands on a simple page with TWO equal-weight buttons side-by-side: 'Share publicly on Google' and 'Send private feedback'. Guest chooses. 100% compliant with Google's latest policy + FTC Consumer Review Rule. No rating-gating, no cheating. Typical 60-day result: 15-25 fresh Google reviews monthly + private feedback flags service issues before they damage public reviews. $497 setup, $499/month. 60-day money-back.)</p>
+      </div>
+      <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border-l-2 border-amber-500">
+        <p class="text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-semibold mb-1">Step 5 — Soft close to WhatsApp</p>
+        <p class="font-medium">"WhatsApp number share karenge? Main aaj ek sample report bhejta hoon aapke motel ka — koi commitment nahi. Dekhke aap decide kariye."</p>
+        <p class="muted italic mt-1">(Share your WhatsApp number? Today I'll send a sample report for your motel — no commitment. Look and decide.)</p>
+      </div>
+      <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
+        <strong>Why this works:</strong> The English→Hindi pivot at Step 2 is the trust moment. Naming a specific competitor's higher rating creates urgency. The "WhatsApp the sample" close is low-friction — owners will share their WhatsApp.
+      </div>`,
+    en: `
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 1 — Gatekeeper</p>
+        <p>"Hi, may I please speak with the owner? I'm calling from <em>[Agency Name]</em> regarding your Google reviews — specifically about why your rating is lower than your neighbours and what that's costing in bookings."</p>
+      </div>
+      <div class="p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg border-l-2 border-accent-500">
+        <p class="text-[11px] uppercase tracking-wider text-accent-700 dark:text-accent-300 font-semibold mb-1">Step 2 — Owner answers</p>
+        <p class="font-medium">"Mr. Patel, hi — quick one, this is a cold call but I'll be 30 seconds. Fair?"</p>
+        <p class="muted italic mt-1">Always pause for the "fair / fine" — gets a micro-yes.</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 3 — Problem agitation (two-pronged)</p>
+        <p>"I help independent motel owners with Google reviews and OTA review velocity. Two things on <em>[Motel name]</em>: <strong>(1)</strong> you're at <em>[3.X]</em> stars, your neighbour <em>[name]</em> is at <em>[4.X]</em>. Cornell research: a 1-star gap costs ~11% on every booked night. <strong>(2) More importantly:</strong> Booking.com changed their algorithm in 2025. Reviews from the last 3 months now carry 2-3× the weight of older ones. Your old reviews stopped counting. Every week without a fresh review, you slip lower in Booking.com placement. Was this on your radar?"</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-2 border-gray-300 dark:border-gray-700">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Step 4 — Solution preview (compliance-safe)</p>
+        <p>"I run a fully-automated post-stay review system. Every guest gets the same SMS 18 hours after checkout. Same message for everyone — no segmentation. They land on one page with two equal-weight buttons side-by-side: <strong>'Share publicly on Google'</strong> and <strong>'Send private feedback to the owner.'</strong> Guest picks. This stays 100% within Google's 2026 policy + the FTC Consumer Review Rule — no rating-gating, no filtering. Typical result: 15-25 fresh Google reviews per month + private feedback that catches service issues before they hit your public listing. $497 setup, $499/month. 60-day money-back if you don't see real volume."</p>
+      </div>
+      <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border-l-2 border-amber-500">
+        <p class="text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-semibold mb-1">Step 5 — Soft close</p>
+        <p class="font-medium">"Best way for me to send you a one-page sample report — your WhatsApp number, or text-friendly mobile? No commitment. Just take a look."</p>
+      </div>`
+  },
+  voicemail: {
+    hi: `<p class="italic">"Namaste Patel sir, main [Name] bol raha hoon [Agency Name] se. Aapki motel ki Google rating ke baare mein baat karne ke liye phone kiya tha. Aapki rating <em>[3.X]</em> hai jabki aapke neighbour ki <em>[4.X]</em> — is wajah se har raat 4-5 booking miss ho rahi hai. Mere paas ek system hai jo 60 din mein rating thik kar deta hai. Mere WhatsApp pe message kariye: <strong>[number]</strong>. Main sample report bhej dunga. Dhanyawad."</p>`,
+    en: `<p class="italic">"Hi Mr. Patel, this is [Name] from [Agency Name]. Calling about your Google rating at <em>[Motel]</em>. You're at <em>[3.X]</em>, your neighbour is at <em>[4.X]</em> — costing ~4-5 bookings every night. I have a system that fixes this in 60 days. Text my WhatsApp at <strong>[number]</strong> and I'll send a sample report. No commitment. Thank you."</p>`
+  }
+};
+
+/* ============== OBJECTIONS ============== */
+const OBJECTIONS = [
+  { obj_en: "I already have reviews handled", obj_hi: "Main already kar raha hoon reviews", resp: "Achha — most owners say that. Sir, ek question: 'handled' matlab Google rating, OTA reviews, ya dono? Most owners sirf happy guests ko personally bolte hain — 80% guests chhoot jaate hain. Mera system har checkout ke baad automatic SMS bhejta hai — koi guest miss nahi hota." },
+  { obj_en: "$499 is too expensive", obj_hi: "$499 bahut hai", resp: "Sir math suniye: $80 ADR aur 60% occupancy par 1-star rating bump = $57K/year extra revenue. $499/month = $5,988/year. Yaani 9.7x return. Agar 60 din mein 10 new reviews nahi laaya, paise wapas. Try karne mein loss kya hai?" },
+  { obj_en: "Let me think about it", obj_hi: "Main soch ke batata hoon", resp: "Bilkul. Sir, specifically kya sochna hai? Price? Trust? Time? Main aapko 2 case studies WhatsApp pe bhejta hoon — 5 minute mein padh lijiye, phir aap mujhe call kar lena. Number share karenge?" },
+  { obj_en: "Need to ask my brother / son / wife", obj_hi: "Bhai/beta/biwi se poochna padega", resp: "Bilkul sahi baat — family decision important hai. Sir ek favor: main aapko 1-page summary WhatsApp karta hoon, aap unhe forward kar dijiye. Written math dekhke unhe samjhana asaan hoga." },
+  { obj_en: "Send email, I'll review later", obj_hi: "Email bhejo, baad mein dekh lunga", resp: "Sir email main spam mein chala jata hai ya bhul jaate hain. WhatsApp faster hai — wahi 1-page report main aaj bhej deta hoon, aap aaj hi 2 minute mein dekh lijiye. Worth 30 seconds for $57K opportunity?" },
+  { obj_en: "How do I know it actually works?", obj_hi: "Kaise pata chalega ki kaam karega?", resp: "Do tarah se prove karunga. Pehla — 60 din ki money-back guarantee likhit mein. Doosra — main 3 motels ka before/after Google screenshot WhatsApp pe bhejta hoon abhi. Verify kar lijiye. Number?" },
+  { obj_en: "I'm too busy right now", obj_hi: "Bahut busy hoon", resp: "Sir isi liye toh phone kiya — yeh system 100% automated hai. Aap ek minute bhi time nahi denge. System sab kuch handle karta hai, main 1st of month ko aapko 1-page report bhej deta hoon. Bus. Setup ke baad zero work for you." },
+  { obj_en: "OTAs (Booking.com / Expedia) already give me bookings, why do I need reviews?", obj_hi: "Booking.com se booking aati hai, reviews ki zarurat kya hai?", resp: "Sir 2 baatein: (1) Booking.com 2025 mein recency-weighted rating kar raha hai — last 3 months ke reviews most important. Naye reviews bina aap dheere-dheere placement kho rahe ho. (2) Higher rating = direct bookings — OTA ka 18% commission save. Dono win." },
+  { obj_en: "I'm in a small town, this won't matter", obj_hi: "Chhota sheher hai, kaam nahi karega", resp: "Ulta sach hai sir — chhote sheher mein kam hotels hain, har rating point zyada matter karta hai. Agar aap 30-mile radius mein only 4.5-star motel ban gaye, to 80% I-highway travelers aapke paas aayenge. Chhote pond mein badi machhli." },
+  { obj_en: "Are you a scammer? How did you get my number?", obj_hi: "Scam toh nahi? Mera number kahan se mila?", resp: "Sir fair question. Aapka number aapki Google Business listing par public hai. Main [Name] hoon, [Agency Name] chalata hoon. LinkedIn pe verify kar lijiye while we talk — main wait karta hoon. WhatsApp pe references bhej dunga signed clients ke." }
+];
+function renderObjections() {
+  document.getElementById('objectionsList').innerHTML = OBJECTIONS.map((o,i) => `
+    <details class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <summary class="p-3 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition">
+        <span class="text-rose-600 dark:text-rose-400 font-semibold text-xs mt-0.5">${(i+1).toString().padStart(2,'0')}</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-medium text-sm">"${escHtml(o.obj_hi)}"</p>
+          <p class="muted italic">${escHtml(o.obj_en)}</p>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 mt-1"></i>
+      </summary>
+      <div class="px-3 pb-3 pl-10 text-sm border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/50 dark:bg-gray-800/30">
+        <p><strong class="text-accent-700 dark:text-accent-400">Response:</strong> ${o.resp}</p>
+      </div>
+    </details>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ============== WHATSAPP SEQUENCE (HINDI) ============== */
+const WHATSAPP_SEQ = [
+  { day: 'Day 0 — within 1 hr of call', msg_hi: "Patel sir, time dene ke liye thanks. Yeh aapke motel ka sample report — *[Motel Name]* ki current Google rating snapshot + 60-day plan. PDF attached. Koi sawaal ho to reply kariye. — [Name], [Agency]" },
+  { day: 'Day 1', msg_hi: "Patel sir, sample dekha? Ek baat jo most owners ko pasand aati hai: *pehla mahina money-back* — agar 10 new reviews na aayein to paise wapas. 10-min call par aapke property ka exact ROI bata du? Calendar: [Calendly link]" },
+  { day: 'Day 3', msg_hi: "Aaj ek client ka update aaya — Atlanta mein Krishna Inn. 6 weeks mein rating 3.4 se 4.4 ho gayi. Booking volume up 22%. Aapke case mein bhi same possible hai. Demo book karu?" },
+  { day: 'Day 7', msg_hi: "Hi Patel sir, main samajhta hoon aap busy ho. Last question — biggest reason aap reviews ko priority nahi de rahe? Price? Time? Trust? Honest answer dijiye, main straight reply dunga." },
+  { day: 'Day 14', msg_hi: "Patel sir, ek baar phir try — sirf 2 minute ka video — exactly dikhata hai aapke motel ke liye system kaise kaam karega: [video link]" },
+  { day: 'Day 30', msg_hi: "Patel sir, samajh aata hai timing sahi nahi hai aapke liye. Ek favor: koi cousin ya friend motel chalata ho jisko fayda ho sakta hai, mera number pass kariye. *$250 cash referral fee* har signed client par. Apna khayal rakhiye!" }
+];
+function renderWhatsApp() {
+  document.getElementById('whatsappSequence').innerHTML = WHATSAPP_SEQ.map((m,i) => `
+    <div class="border-l-2 border-accent-500 pl-3 py-2 bg-accent-50/40 dark:bg-accent-900/10 rounded-r-lg">
+      <p class="text-[11px] font-semibold text-accent-700 dark:text-accent-300 uppercase tracking-wide">${m.day}</p>
+      <p class="text-xs mt-1.5 whitespace-pre-line">${escHtml(m.msg_hi)}</p>
+      <button class="text-[10px] mt-2 px-2 py-0.5 rounded bg-accent-600 text-white hover:bg-accent-700" onclick="copyText(\`${m.msg_hi.replace(/`/g,"'")}\`)">Copy</button>
+    </div>`).join('');
+}
+
+/* ============== DEMO STRUCTURE ============== */
+function renderDemoStructure() {
+  document.getElementById('demoStructure').innerHTML = `
+    <ol class="list-decimal pl-5 space-y-3 text-sm">
+      <li><strong>Rapport (2 min)</strong> — "Patel sir, kaise hain aap? Originally kahan se ho? Family kaisi hai?" Find common ground (village, college, vendor).</li>
+      <li><strong>Discovery (3 min)</strong> — Ask: rooms? current ADR? slow season? biggest competitor on Google? current rating? past review services tried?</li>
+      <li><strong>Show their property (2 min)</strong> — Share screen / WhatsApp screenshot of their Google listing + top 2 competitors. Make them SEE the gap.</li>
+      <li><strong>Demo the system (3 min)</strong> — Show the GoHighLevel review-request flow. 5-star → Google. 1-3 star → private form. Show a sample monthly report.</li>
+      <li><strong>ROI math for THEIR motel (2 min)</strong> — Plug their numbers into the calculator: rooms × occ × ADR × 11% uplift. Get them to say the dollar number themselves.</li>
+      <li><strong>Pricing (1 min)</strong> — "$497 setup, $499/month. 60-day money-back guarantee. Anytime cancel anytime."</li>
+      <li><strong>Close (2 min)</strong> — "Sir aaj signup ka Stripe link bhejta hoon. 2 minute lagta hai. Aaj start karein to kal se hi pehla review request guests ko jaayega. Chalu karu?"</li>
+    </ol>`;
+}
+
+/* ============== KB ============== */
+const KB_ITEMS = [
+  { title:'90-day execution plan', icon:'calendar-clock', body:`<p class="text-sm">Open <code>operations/90-day-plan.md</code> in the package folder. Highlights:</p>
+    <ul class="list-disc pl-5 text-sm mt-2 space-y-1">
+      <li><strong>Week 1-2:</strong> Wyoming LLC + GoHighLevel + JustCall + scrape 500 motels</li>
+      <li><strong>Week 3-4:</strong> 200 dials/day, sign first 2 clients</li>
+      <li><strong>Week 5-8:</strong> 6 active clients = $3K MRR</li>
+      <li><strong>Week 9-12:</strong> 10 clients = $5K MRR + $5K setup fees collected</li>
+    </ul>` },
+  { title:'Lead-sourcing 5-step process', icon:'database', body:`<ol class="list-decimal pl-5 text-sm space-y-1">
+    <li>Scrape Google Maps for "motel" / "inn" / "lodge" via Outscraper (~$40 for 5K records)</li>
+    <li>Filter for owner names with Indian surnames (Patel, Shah, Mehta, Desai, Modi, Bhakta, etc.)</li>
+    <li>Cross-reference with AAHOA directory if you join as Allied Member ($300/yr)</li>
+    <li>Enrich phone + email with Apollo ($49/mo Basic)</li>
+    <li>Sort by US time zone + rating gap vs nearest 3 competitors + rooms</li>
+  </ol>` },
+  { title:'Tech stack setup order', icon:'wrench', body:`<p class="text-sm">Open <code>operations/tech-stack-setup.md</code>. Order:</p>
+    <ol class="list-decimal pl-5 text-sm mt-2 space-y-1">
+      <li>Day 1: Wyoming LLC via Northwest ($139) + EIN call to IRS</li>
+      <li>Day 3-7: Mercury Bank + Stripe + GoHighLevel Unlimited ($297/mo)</li>
+      <li>Day 5: JustCall + US local number + A2P 10DLC registration</li>
+      <li>Day 7: Apollo + Outscraper + Calendly</li>
+      <li>Day 10: 360dialog for WhatsApp Business API</li>
+    </ol>` },
+  { title:'TCPA / call recording rules', icon:'shield-check', body:`<p class="text-sm">B2B cold calls to motel landlines are TCPA-clear. Rules:</p>
+    <ul class="list-disc pl-5 text-sm mt-2 space-y-1">
+      <li>Scrub National DNC for any cell numbers ($65/yr)</li>
+      <li>In 13 two-party states (CA, CT, DE, FL, IL, MD, MA, MI, MT, NV, NH, OR, PA, WA), announce: <em>"This call may be recorded for quality and training purposes."</em> Best practice: announce always.</li>
+      <li>SMS to past guests = client owns consent. Include in MSA.</li>
+      <li>A2P 10DLC mandatory for any SMS sent to US numbers</li>
+      <li>No calls before 8am or after 9pm local time</li>
+    </ul>` },
+  { title:'Onboarding a new client (Day 0-30)', icon:'rocket', body:`<ol class="list-decimal pl-5 text-sm space-y-1">
+    <li><strong>Day 0:</strong> WhatsApp: "Welcome Patel sir! Stripe link → [link]. Kickoff call calendar → [Calendly]. MSA → [Dropbox Sign link]."</li>
+    <li><strong>Day 1:</strong> 30-min kickoff. Get Google Business Profile access, PMS guest list export, brand colors.</li>
+    <li><strong>Day 2-3:</strong> Build their GHL sub-account, configure review-request workflow, A2P 10DLC for their number.</li>
+    <li><strong>Day 7:</strong> First batch of review request SMS goes out. Share early results screenshot.</li>
+    <li><strong>Day 30:</strong> Monthly report — new reviews, rating change, smart-routed negative feedback, plan for next month.</li>
+  </ol>` },
+  { title:'Referral program', icon:'gift', body:`<p class="text-sm">Activate after client #1. Tell every closed client: <em>"$250 cash for every motel owner you refer who signs up."</em> Pay within 30 days of the new client's first month. Track in deals log notes.</p>` },
+  { title:'Pricing flex — when to discount', icon:'percent', body:`<ul class="list-disc pl-5 text-sm space-y-1">
+    <li><strong>NEVER discount the $499 MRR.</strong> Drop setup to $297 if needed — preserves recurring revenue.</li>
+    <li><strong>3-month prepay = $1,297</strong> — for cash-flow-conscious owners.</li>
+    <li><strong>Multi-property:</strong> 2nd property $399/mo, 3rd+ $299/mo. Builds the Patel cousin network into one account.</li>
+  </ul>` },
+  { title:'Things to NEVER do', icon:'alert-triangle', body:`<ul class="list-disc pl-5 text-sm space-y-1">
+    <li>Never promise "#1 ranking on Google" — promise rating lift, not ranking</li>
+    <li>Never offer to write fake reviews — kills your career and the client's listing</li>
+    <li>Never lie about location / having a local office</li>
+    <li>Never SMS guests without client's written consent</li>
+    <li>Never call before 8am or after 9pm local time</li>
+  </ul>` }
+];
+function renderKB() {
+  document.getElementById('tab-kb').innerHTML = KB_ITEMS.map(k => `
+    <details class="card" style="padding:0;">
+      <summary class="p-4 flex items-center gap-3"><i data-lucide="${k.icon}" class="w-4 h-4 text-accent-600"></i><span class="flex-1 font-semibold text-sm">${k.title}</span><i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i></summary>
+      <div class="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-3">${k.body}</div>
+    </details>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ============== MONEY ============== */
+function renderMoney() {
+  const won = state.deals.filter(d => d.stage !== 'lost');
+  const mrr = won.reduce((s,d) => s + (d.mrr||0), 0);
+  document.getElementById('moneyMRR').textContent = mrr.toLocaleString();
+  document.getElementById('moneyMRRClients').textContent = won.length;
+  document.getElementById('moneyARR').textContent = (mrr*12).toLocaleString();
+  const month = todayKey().slice(0,7);
+  const thisMonthDeals = won.filter(d => d.signedDate.startsWith(month));
+  const setupSum = thisMonthDeals.reduce((s,d) => s + (d.setupCollected||0), 0);
+  document.getElementById('moneySetup').textContent = setupSum.toLocaleString();
+  document.getElementById('moneySetupCount').textContent = thisMonthDeals.length;
+  const pct = Math.min(100, mrr/state.targetMRR*100);
+  document.getElementById('moneyPathBar').style.width = pct+'%';
+  document.getElementById('moneyPathPct').textContent = Math.round(pct)+'%';
+  document.getElementById('dealsEmpty').classList.toggle('hidden', won.length > 0);
+  document.getElementById('dealsTableBody').innerHTML = won.slice().reverse().map(d => `
+    <tr>
+      <td class="muted">${d.signedDate}</td>
+      <td><strong>${escHtml(d.motel||'')}</strong></td>
+      <td>${escHtml(d.owner||'')}</td>
+      <td>$${d.mrr}</td>
+      <td>$${d.setupCollected||0}</td>
+      <td class="text-right"><button onclick="deleteDeal('${d.id}')" class="text-xs text-rose-500 hover:underline">×</button></td>
+    </tr>`).join('');
+}
+function deleteDeal(id) {
+  if (!confirm('Remove this deal?')) return;
+  state.deals = state.deals.filter(d => d.id !== id);
+  saveState();
+  refreshAll();
+}
+
+/* ============== QUICK ACTIONS ============== */
+function quickAction(type) {
+  if (type === 'newCall') {
+    const k = state.dailyKPIs[todayKey()] || { dials:0, demos:0 };
+    k.dials += 1;
+    state.dailyKPIs[todayKey()] = k;
+    saveState();
+    renderKPIs();
+  } else if (type === 'newDeal') {
+    const motel = prompt('Motel name?');
+    if (!motel) return;
+    const owner = prompt('Owner name?') || '';
+    state.deals.push({
+      id: 'D' + Date.now(),
+      signedDate: todayKey(),
+      mrr: state.monthlyFee,
+      setupCollected: state.setupFee,
+      stage: 'won',
+      motel: motel,
+      owner: owner
+    });
+    saveState();
+    refreshAll();
+    alert('🎉 Deal logged: $' + state.setupFee + ' setup + $' + state.monthlyFee + '/mo MRR.');
+  }
+}
+
+/* ============== CALCULATORS ============== */
+function calcROI() {
+  const rooms = parseFloat(document.getElementById('roiRooms').value) || 30;
+  const occ = (parseFloat(document.getElementById('roiOcc').value) || 60) / 100;
+  const adr = parseFloat(document.getElementById('roiADR').value) || 80;
+  const lift = parseFloat(document.getElementById('roiLift').value) || 1;
+  const annualRev = rooms * occ * adr * 365;
+  const upliftRev = annualRev * lift * 0.11;
+  const fee = state.monthlyFee * 12;
+  const roi = upliftRev / fee;
+  document.getElementById('roiResult').innerHTML = `
+    <p><strong>Current annual revenue:</strong> $${annualRev.toLocaleString(undefined,{maximumFractionDigits:0})}</p>
+    <p><strong>Annual uplift from ${lift}-pt rating bump:</strong> <span class="text-accent-700 dark:text-accent-300 font-bold">$${upliftRev.toLocaleString(undefined,{maximumFractionDigits:0})}</span></p>
+    <p><strong>Our annual fee:</strong> $${fee.toLocaleString()}</p>
+    <p class="mt-2"><strong>ROI:</strong> <span class="text-accent-700 dark:text-accent-300 font-bold text-lg">${roi.toFixed(1)}×</span> for the motel owner</p>
+    <p class="muted mt-2">Read this aloud during the discovery call.</p>`;
+  document.getElementById('roiResult').classList.remove('hidden');
+}
+function calcProjection() {
+  const c = parseFloat(document.getElementById('projClients').value) || 10;
+  const mrr = parseFloat(document.getElementById('projMRR').value) || 499;
+  const setup = parseFloat(document.getElementById('projSetup').value) || 497;
+  const stack = parseFloat(document.getElementById('projStack').value) || 1666;
+  const monthlyRev = c * mrr;
+  const net = monthlyRev - stack;
+  const annualGross = monthlyRev * 12;
+  const annualNet = net * 12 + setup * c;
+  document.getElementById('projResult').innerHTML = `
+    <p><strong>Monthly revenue:</strong> $${monthlyRev.toLocaleString()}</p>
+    <p><strong>Stack cost:</strong> $${stack.toLocaleString()}/mo</p>
+    <p><strong>Monthly NET:</strong> <span class="text-accent-700 dark:text-accent-300 font-bold text-lg">$${net.toLocaleString()}</span></p>
+    <hr class="my-2 border-gray-200 dark:border-gray-700">
+    <p><strong>Annual gross:</strong> $${annualGross.toLocaleString()}</p>
+    <p><strong>Annual NET (recurring + ${c} setup fees):</strong> $${annualNet.toLocaleString()}</p>`;
+  document.getElementById('projResult').classList.remove('hidden');
+}
+function calcCallVolume() {
+  const d = parseFloat(document.getElementById('cvDials').value) || 200;
+  const days = parseFloat(document.getElementById('cvDays').value) || 22;
+  const r1 = parseFloat(document.getElementById('cvR1').value) || 4;
+  const r2 = parseFloat(document.getElementById('cvR2').value) || 25;
+  const monthlyDials = d * days;
+  const conv = monthlyDials * (r1/100);
+  const demos = conv * 0.4;
+  const closes = demos * (r2/100);
+  document.getElementById('cvResult').innerHTML = `
+    <p><strong>Monthly dials:</strong> ${monthlyDials.toLocaleString()}</p>
+    <p><strong>Conversations with owners:</strong> ~${Math.round(conv)}</p>
+    <p><strong>Demos booked:</strong> ~${Math.round(demos)}</p>
+    <p><strong>Closes per month:</strong> <span class="text-accent-700 dark:text-accent-300 font-bold text-lg">${closes.toFixed(1)}</span></p>
+    <p><strong>New MRR added/mo:</strong> $${Math.round(closes*state.monthlyFee).toLocaleString()}</p>
+    <p><strong>Setup fees/mo:</strong> $${Math.round(closes*state.setupFee).toLocaleString()}</p>`;
+  document.getElementById('cvResult').classList.remove('hidden');
+}
+
+/* ============== SETTINGS ============== */
+function loadSettingsForm() {
+  document.getElementById('setAgency').value = state.agencyName;
+  document.getElementById('setOperator').value = state.operatorName;
+  document.getElementById('setEmail').value = state.operatorEmail;
+  document.getElementById('setTZ').value = state.operatorTZ;
+  document.getElementById('setSetup').value = state.setupFee;
+  document.getElementById('setMRR').value = state.monthlyFee;
+}
+function saveSettings() {
+  state.agencyName = document.getElementById('setAgency').value || 'Motel Agency';
+  state.operatorName = document.getElementById('setOperator').value;
+  state.operatorEmail = document.getElementById('setEmail').value.trim().toLowerCase();
+  state.operatorTZ = document.getElementById('setTZ').value;
+  state.setupFee = parseFloat(document.getElementById('setSetup').value) || 497;
+  state.monthlyFee = parseFloat(document.getElementById('setMRR').value) || 499;
+  saveState();
+  document.getElementById('sidebarAgency').textContent = state.agencyName;
+  document.getElementById('userName').textContent = state.operatorName;
+  document.getElementById('userEmail').textContent = state.operatorEmail;
+  document.getElementById('userAvatar').textContent = (state.operatorName || '?').charAt(0).toUpperCase();
+  updateTimes();
+  alert('Saved.');
+}
+function exportAll() {
+  download(JSON.stringify(state, null, 2), `motel-agency-backup-${todayKey()}.json`, 'application/json');
+}
+function importAll(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      state = { ...DEFAULTS, ...JSON.parse(reader.result) };
+      saveState();
+      location.reload();
+    } catch (e) { alert('Invalid backup file.'); }
+  };
+  reader.readAsText(file);
+}
+function resetAll() {
+  if (!confirm('Reset ALL data? This wipes leads, deals, and password.')) return;
+  if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+  localStorage.removeItem('motelAgencyState');
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+/* ============== CHECKLIST ============== */
+function loadChecklistState() {
+  const today = state.checklist[todayKey()] || {};
+  document.querySelectorAll('[data-task]').forEach(cb => {
+    cb.checked = !!today[cb.dataset.task];
+    cb.addEventListener('change', () => {
+      const k = state.checklist[todayKey()] || {};
+      k[cb.dataset.task] = cb.checked;
+      state.checklist[todayKey()] = k;
+      saveState();
+    });
+  });
+}
+
+/* ============== UTILS ============== */
+function escHtml(s) { return (s||'').toString().replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function copyScript(id) {
+  const t = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(t);
+  alert('Copied');
+}
+function copyText(t) { navigator.clipboard.writeText(t); }
+function download(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function refreshAll() {
+  renderKPIs();
+  renderPipelineSnapshot();
+  renderPipelineBoard();
+  renderLeadsTable();
+  renderMoney();
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ============== TWILIO VOICE ============== */
+let twilioDevice = null;
+let activeCall = null;
+let callStartTime = null;
+let callTimerInterval = null;
+let currentDialerLead = null;
+let muted = false;
+
+async function initTwilioDevice() {
+  const t = state.twilio;
+  if (!t.tokenUrl) {
+    document.getElementById('twilioStatus').textContent = 'Twilio: not configured';
+    document.getElementById('twilioStatus').className = 'badge bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
+    return;
+  }
+  if (!window.Twilio || !window.Twilio.Device) {
+    console.warn('Twilio SDK not loaded');
+    return;
+  }
+  try {
+    const tokenRes = await fetch(t.tokenUrl + '?identity=' + encodeURIComponent(state.operatorEmail));
+    if (!tokenRes.ok) throw new Error('Token fetch failed: ' + tokenRes.status);
+    const tokenData = await tokenRes.json();
+    const token = tokenData.token || tokenData.accessToken || tokenData;
+    if (typeof token !== 'string') throw new Error('Invalid token response');
+
+    if (twilioDevice) { twilioDevice.destroy(); twilioDevice = null; }
+    twilioDevice = new Twilio.Device(token, { codecPreferences: ['opus','pcmu'], logLevel: 'silent' });
+
+    twilioDevice.on('registered', () => {
+      document.getElementById('twilioStatus').textContent = 'Twilio: ready';
+      document.getElementById('twilioStatus').className = 'badge bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300';
+    });
+    twilioDevice.on('error', (e) => {
+      console.error('Twilio error', e);
+      document.getElementById('twilioStatus').textContent = 'Twilio: error';
+      document.getElementById('twilioStatus').className = 'badge bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300';
+    });
+    twilioDevice.on('incoming', (call) => {
+      if (confirm('Incoming call from ' + call.parameters.From + '. Accept?')) call.accept();
+      else call.reject();
+    });
+
+    await twilioDevice.register();
+  } catch (e) {
+    console.error('Twilio init failed', e);
+    document.getElementById('twilioStatus').textContent = 'Twilio: init failed';
+    document.getElementById('twilioStatus').className = 'badge bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300';
+  }
+}
+
+function callLead(leadId) {
+  const lead = state.leads.find(l => l.id === leadId);
+  if (!lead) return;
+  if (!lead.phone) { alert('No phone number for this lead.'); return; }
+  currentDialerLead = lead;
+  document.getElementById('dialerLeadName').textContent = `${lead.motel}${lead.owner ? ' — '+lead.owner : ''}`;
+  document.getElementById('dialerNumber').textContent = formatPhone(lead.phone);
+  document.getElementById('dialerStatus').textContent = 'Ready to dial';
+  document.getElementById('dialerTimer').textContent = '00:00';
+  document.getElementById('btnCall').style.display = 'inline-flex';
+  document.getElementById('btnHangup').classList.add('hidden');
+  document.getElementById('btnMute').classList.add('hidden');
+  document.getElementById('btnKeypad').classList.add('hidden');
+  document.getElementById('dialerKeypad').style.display = 'none';
+  document.getElementById('dialerPanel').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeDialer() {
+  if (activeCall) {
+    if (!confirm('End the active call?')) return;
+    hangupCall();
+  }
+  document.getElementById('dialerPanel').classList.add('hidden');
+  currentDialerLead = null;
+}
+
+async function placeCall() {
+  if (!currentDialerLead) return;
+  const number = currentDialerLead.phone;
+
+  if (state.twilio.testMode === 'on') {
+    document.getElementById('dialerStatus').textContent = 'TEST MODE — simulated';
+    document.getElementById('btnCall').style.display = 'none';
+    document.getElementById('btnHangup').classList.remove('hidden');
+    document.getElementById('btnMute').classList.remove('hidden');
+    document.getElementById('btnKeypad').classList.remove('hidden');
+    callStartTime = Date.now();
+    callTimerInterval = setInterval(updateCallTimer, 1000);
+    activeCall = { test: true, parameters: { To: number } };
+    return;
+  }
+
+  if (!twilioDevice) {
+    alert('Twilio not configured. Open Settings → Twilio Voice and set the token URL first.');
+    return;
+  }
+
+  try {
+    document.getElementById('dialerStatus').textContent = 'Connecting…';
+    activeCall = await twilioDevice.connect({ params: { To: number, From: state.twilio.callerNumber } });
+
+    activeCall.on('accept', () => {
+      document.getElementById('dialerStatus').textContent = 'Connected';
+      document.getElementById('btnCall').style.display = 'none';
+      document.getElementById('btnHangup').classList.remove('hidden');
+      document.getElementById('btnMute').classList.remove('hidden');
+      document.getElementById('btnKeypad').classList.remove('hidden');
+      callStartTime = Date.now();
+      callTimerInterval = setInterval(updateCallTimer, 1000);
+    });
+    activeCall.on('disconnect', () => onCallEnded());
+    activeCall.on('cancel', () => onCallEnded());
+    activeCall.on('reject', () => onCallEnded());
+    activeCall.on('error', (e) => {
+      console.error('Call error', e);
+      document.getElementById('dialerStatus').textContent = 'Error';
+      onCallEnded();
+    });
+  } catch (e) {
+    console.error('Place call failed', e);
+    alert('Could not place call: ' + e.message);
+  }
+}
+
+function hangupCall() {
+  if (!activeCall) return;
+  if (activeCall.test) {
+    onCallEnded();
+  } else {
+    activeCall.disconnect();
+  }
+}
+
+function onCallEnded() {
+  const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
+  if (callTimerInterval) clearInterval(callTimerInterval);
+  callTimerInterval = null;
+
+  document.getElementById('dialerStatus').textContent = 'Call ended';
+  document.getElementById('btnCall').style.display = 'inline-flex';
+  document.getElementById('btnHangup').classList.add('hidden');
+  document.getElementById('btnMute').classList.add('hidden');
+  document.getElementById('btnKeypad').classList.add('hidden');
+  document.getElementById('dialerKeypad').style.display = 'none';
+
+  if (currentDialerLead && duration >= 0) {
+    pendingCallLog = {
+      id: 'C' + Date.now(),
+      leadId: currentDialerLead.id,
+      motel: currentDialerLead.motel,
+      owner: currentDialerLead.owner,
+      number: currentDialerLead.phone,
+      direction: 'outbound',
+      startTime: callStartTime,
+      duration: duration,
+      timestamp: todayKey() + ' ' + new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:false })
+    };
+    showDispositionModal();
+  }
+
+  activeCall = null;
+  callStartTime = null;
+  muted = false;
+  const dialsK = state.dailyKPIs[todayKey()] || { dials: 0, demos: 0 };
+  dialsK.dials += 1;
+  state.dailyKPIs[todayKey()] = dialsK;
+  saveState();
+  renderKPIs();
+}
+
+let pendingCallLog = null;
+function showDispositionModal() {
+  if (!pendingCallLog) return;
+  document.getElementById('dispLeadName').textContent = pendingCallLog.motel;
+  const m = Math.floor(pendingCallLog.duration/60), s = pendingCallLog.duration%60;
+  document.getElementById('dispDuration').textContent = `(${m}m ${s}s)`;
+  document.getElementById('dispNotes').value = '';
+  document.getElementById('dispositionModal').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+let pendingDisposition = null;
+function setDisposition(d) {
+  pendingDisposition = d;
+  document.querySelectorAll('#dispositionModal button[onclick^="setDisposition"]').forEach(b => {
+    b.classList.toggle('border-accent-500', false);
+    b.classList.toggle('bg-accent-50', false);
+  });
+  event.currentTarget.classList.add('border-accent-500','bg-accent-50');
+}
+function saveDisposition() {
+  if (!pendingCallLog) return;
+  pendingCallLog.disposition = pendingDisposition || 'unspecified';
+  pendingCallLog.notes = document.getElementById('dispNotes').value.trim();
+  state.calls.push(pendingCallLog);
+
+  const lead = state.leads.find(l => l.id === pendingCallLog.leadId);
+  if (lead) {
+    lead.lastContact = todayKey();
+    const stageMap = {
+      'connected_demo_booked': 'Demo Booked',
+      'connected_closed': 'Closed Won',
+      'connected_followup': 'Contacted',
+      'not_interested': 'Closed Lost',
+      'voicemail': lead.stage === 'Cold' ? 'Contacted' : lead.stage,
+      'no_answer': lead.stage,
+      'wrong_number': lead.stage
+    };
+    const newStage = stageMap[pendingCallLog.disposition];
+    if (newStage && newStage !== lead.stage) {
+      lead.stage = newStage;
+      if (newStage === 'Demo Booked') {
+        const k = state.dailyKPIs[todayKey()] || { dials:0, demos:0 };
+        k.demos += 1;
+        state.dailyKPIs[todayKey()] = k;
+      }
+      if (newStage === 'Closed Won' && !state.deals.find(d => d.leadId === lead.id)) {
+        state.deals.push({
+          id: 'D' + Date.now(),
+          leadId: lead.id,
+          signedDate: todayKey(),
+          mrr: state.monthlyFee,
+          setupCollected: state.setupFee,
+          stage: 'won',
+          motel: lead.motel,
+          owner: lead.owner
+        });
+      }
+    }
+  }
+  saveState();
+  document.getElementById('dispositionModal').classList.add('hidden');
+  document.getElementById('dialerPanel').classList.add('hidden');
+  pendingCallLog = null;
+  pendingDisposition = null;
+  refreshAll();
+  renderCalls();
+}
+function skipDisposition() {
+  if (!pendingCallLog) return;
+  pendingCallLog.disposition = 'no_disposition';
+  pendingCallLog.notes = '';
+  state.calls.push(pendingCallLog);
+  saveState();
+  document.getElementById('dispositionModal').classList.add('hidden');
+  document.getElementById('dialerPanel').classList.add('hidden');
+  pendingCallLog = null;
+  renderCalls();
+}
+
+function updateCallTimer() {
+  if (!callStartTime) return;
+  const sec = Math.floor((Date.now() - callStartTime) / 1000);
+  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  document.getElementById('dialerTimer').textContent = `${m}:${s}`;
+}
+function toggleMute() {
+  if (!activeCall || activeCall.test) {
+    muted = !muted;
+    document.getElementById('btnMute').innerHTML = muted ? '<i data-lucide="mic" class="w-4 h-4"></i> Unmute' : '<i data-lucide="mic-off" class="w-4 h-4"></i> Mute';
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  muted = !muted;
+  activeCall.mute(muted);
+  document.getElementById('btnMute').innerHTML = muted ? '<i data-lucide="mic" class="w-4 h-4"></i> Unmute' : '<i data-lucide="mic-off" class="w-4 h-4"></i> Mute';
+  if (window.lucide) lucide.createIcons();
+}
+function toggleKeypad() {
+  const kp = document.getElementById('dialerKeypad');
+  kp.style.display = kp.style.display === 'none' ? 'grid' : 'none';
+}
+function sendDTMF(d) {
+  if (activeCall && !activeCall.test) activeCall.sendDigits(d);
+}
+
+function saveTwilio() {
+  state.twilio.tokenUrl = document.getElementById('twToken').value.trim();
+  state.twilio.callerNumber = document.getElementById('twNumber').value.trim();
+  state.twilio.appSid = document.getElementById('twAppSid').value.trim();
+  state.twilio.testMode = document.getElementById('twTestMode').value;
+  saveState();
+  const r = document.getElementById('twResult');
+  r.className = 'mt-3 text-xs px-3 py-2 rounded-lg bg-accent-50 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300';
+  r.textContent = 'Saved. Initializing Twilio Device…';
+  r.classList.remove('hidden');
+  initTwilioDevice();
+}
+async function testTwilioConnection() {
+  const r = document.getElementById('twResult');
+  r.classList.remove('hidden');
+  r.className = 'mt-3 text-xs px-3 py-2 rounded-lg bg-gray-100 text-gray-700';
+  r.textContent = 'Testing…';
+  if (!state.twilio.tokenUrl) {
+    r.className = 'mt-3 text-xs px-3 py-2 rounded-lg bg-rose-50 text-rose-700';
+    r.textContent = 'Token URL is empty. Save settings first.';
+    return;
+  }
+  try {
+    const res = await fetch(state.twilio.tokenUrl + '?identity=test');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const token = data.token || data.accessToken || data;
+    if (typeof token !== 'string') throw new Error('Token endpoint did not return a string token');
+    r.className = 'mt-3 text-xs px-3 py-2 rounded-lg bg-accent-50 text-accent-700';
+    r.textContent = '✓ Token endpoint reachable. Initializing Device…';
+    initTwilioDevice();
+  } catch (e) {
+    r.className = 'mt-3 text-xs px-3 py-2 rounded-lg bg-rose-50 text-rose-700';
+    r.textContent = 'Failed: ' + e.message;
+  }
+}
+function loadTwilioSettings() {
+  document.getElementById('twToken').value = state.twilio.tokenUrl || '';
+  document.getElementById('twNumber').value = state.twilio.callerNumber || '';
+  document.getElementById('twAppSid').value = state.twilio.appSid || '';
+  document.getElementById('twTestMode').value = state.twilio.testMode || 'off';
+}
+
+const DISPO_LABEL = {
+  'connected_demo_booked': '🎯 Demo booked',
+  'connected_closed': '💰 Closed',
+  'connected_followup': '📞 Follow-up',
+  'not_interested': '🚫 Not interested',
+  'voicemail': '📭 Voicemail',
+  'no_answer': '📵 No answer',
+  'wrong_number': '❌ Wrong #',
+  'no_disposition': '—',
+  'unspecified': '—'
+};
+const DISPO_COLOR = {
+  'connected_demo_booked': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  'connected_closed': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  'connected_followup': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  'not_interested': 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  'voicemail': 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  'no_answer': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  'wrong_number': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  'no_disposition': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  'unspecified': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+};
+function renderCalls() {
+  const calls = state.calls.slice().reverse();
+  const today = todayKey();
+  const todayCalls = state.calls.filter(c => c.timestamp && c.timestamp.startsWith(today));
+  const todayTalkSec = todayCalls.reduce((s,c) => s + (c.duration||0), 0);
+  const connected = state.calls.filter(c => ['connected_demo_booked','connected_closed','connected_followup'].includes(c.disposition));
+  const demos = state.calls.filter(c => c.disposition === 'connected_demo_booked');
+  document.getElementById('callsTotal').textContent = state.calls.length;
+  document.getElementById('callsTalkTime').textContent = Math.floor(todayTalkSec/60) + 'm';
+  document.getElementById('callsConnectRate').textContent = state.calls.length ? Math.round(connected.length/state.calls.length*100)+'%' : '0%';
+  document.getElementById('callsDemosFromCalls').textContent = demos.length;
+  document.getElementById('callsEmpty').classList.toggle('hidden', calls.length > 0);
+  document.getElementById('callsTableBody').innerHTML = calls.map(c => {
+    const dur = c.duration ? Math.floor(c.duration/60)+'m '+(c.duration%60)+'s' : '0s';
+    return `<tr>
+      <td class="muted text-xs">${c.timestamp || ''}</td>
+      <td><strong>${escHtml(c.motel||'')}</strong><br><span class="muted">${escHtml(c.owner||'')}</span></td>
+      <td>${escHtml(c.number||'')}</td>
+      <td>${c.direction === 'outbound' ? '↗' : '↙'}</td>
+      <td>${dur}</td>
+      <td><span class="badge ${DISPO_COLOR[c.disposition]||'bg-gray-100'}">${DISPO_LABEL[c.disposition]||c.disposition||'—'}</span></td>
+      <td class="muted text-xs">${escHtml((c.notes||'').slice(0,60))}${c.notes && c.notes.length > 60 ? '…':''}</td>
+      <td class="text-right"><button onclick="deleteCall('${c.id}')" class="text-rose-500 text-xs hover:underline">×</button></td>
+    </tr>`;
+  }).join('');
+}
+function deleteCall(id) {
+  if (!confirm('Delete this call log?')) return;
+  state.calls = state.calls.filter(c => c.id !== id);
+  saveState();
+  renderCalls();
+}
+function exportCallsCSV() {
+  const cols = ['timestamp','motel','owner','number','direction','duration','disposition','notes'];
+  const rows = state.calls.map(c => cols.map(k => `"${(c[k]||'').toString().replace(/"/g,'""')}"`).join(','));
+  download([cols.join(','), ...rows].join('\n'), `calls-${todayKey()}.csv`, 'text/csv');
+}
+function formatPhone(p) {
+  if (!p) return '';
+  const d = p.replace(/\D/g,'');
+  if (d.length === 11 && d[0] === '1') return `+1 (${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+  if (d.length === 10) return `+1 (${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  return p;
+}
+
+/* ============== GO ============== */
+document.addEventListener('DOMContentLoaded', entry);
+</script>
+</body>
+</html>
