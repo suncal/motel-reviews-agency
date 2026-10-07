@@ -1,5 +1,9 @@
 # Patel Motel Reviews Agency — Operator Package
 
+[![Live demo](https://img.shields.io/badge/live-demo-0E6B52)](https://suncal.github.io/motel-reviews-agency/) [![Stars](https://img.shields.io/github/stars/suncal/motel-reviews-agency?style=social)](https://github.com/suncal/motel-reviews-agency/stargazers)
+
+![screenshot](docs/hero.png)
+
 A complete, ready-to-run business package for a phone-based reviews & reputation management agency targeting Indian-American (Patel) owned independent motels in the US, operated remotely from another Asian country by a **Hindi-speaking** operator.
 
 **Lead offer:** $499/mo + $497 setup. Google reviews automation + reputation monitoring.
@@ -153,3 +157,9 @@ That's the entire deal. Now go make the first call.
 
 *Package built May 2026 — opus 4.7 (1M context).*
 *All research and pricing verified at the time of build. Refresh quarterly.*
+
+---
+
+**If this is useful to you, a ⭐ on the repo helps other people find it.** Issues and pull requests are welcome.
+
+Built by [Priyankar "Sunny" Chakraborty](https://github.com/suncal) · [everbuiltstudio.com](https://everbuiltstudio.com)
